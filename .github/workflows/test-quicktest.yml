@@ -1,0 +1,54 @@
+name: "Test quicktest 🧪"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: '**'
+    paths: [ quicktest ]
+  pull_request:
+    branches: '**'
+    paths: [ quicktest ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  list-all-testcases:
+    name: "List all provided testcases 📝"
+    runs-on: ubuntu-22.04
+    # The type of runner that the job will run on
+    #runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+      - name: "List all supported OS variants"
+        run: |
+          mkdir -p results
+          ./quicktest --list-tests | tee results/testcases.txt
+          echo -e "\nResults:"
+          echo "- All test cases: $(wc -l results/testcases.txt | tail -n +2)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supported
+          path: results/testcases.txt
+
+  upload-artifacts:
+    needs: [list-all-testcases]
+    name: "Uploading artifacts"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: results
+          merge-multiple: true
+      - name: "List Test Cases"
+        run: |
+          ls -R results/
+      - uses: actions/upload-artifact@v4
+        with:
+          overwrite: true
+          name: results
+          path: results/
