@@ -34,21 +34,3 @@ jobs:
         with:
           name: supported
           path: results/testcases.txt
-
-  upload-artifacts:
-    needs: [list-all-testcases]
-    name: "Uploading artifacts"
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: results
-          merge-multiple: true
-      - name: "List Test Cases"
-        run: |
-          ls -R results/
-      - uses: actions/upload-artifact@v4
-        with:
-          overwrite: true
-          name: results
-          path: results/
