@@ -728,35 +728,6 @@ function qt_cleanup() {
 ### MAIN
 ###
 
-# Check for required commands
-if $CREATE_TIMELAPSE && ! FFMPEG=$(command -v ffmpeg); then
-    echo "🚨 ffmpeg is not found."
-    exit 1
-fi
-if ! SOCAT=$(command -v socat); then
-    echo "🚨 socat is not found."
-    exit 1
-fi
-if ! TESSERACT=$(command -v tesseract); then
-    echo "🚨 tesseract is not found."
-    exit 1
-fi
-if ! QUICKEMU=$(command -v quickemu); then
-    echo "🚨 quickemu is not found."
-    exit 1
-else
-    if ! $QUICKEMU --version | grep -q "$QUICKEMU_MIN_VERSION"; then
-        echo "🚨 quickemu version $QUICKEMU_MIN_VERSION or newer is required."
-        exit 1
-    else 
-        QUICKEMU_VER_LONG=$($QUICKEMU --version)
-    fi
-fi
-if ! QUICKGET=$(command -v quickget); then
-    echo "🚨 quickget is not found."
-    exit 1
-fi
-
 # Take command line arguments
 if [ $# -lt 1 ]; then
     qt_usage
@@ -788,6 +759,35 @@ else    case "${1}" in
         EDITION=${1:-""}
         ;;
     esac
+fi
+
+# Check for required commands
+if $CREATE_TIMELAPSE && ! FFMPEG=$(command -v ffmpeg); then
+    echo "🚨 ffmpeg is not found."
+    exit 1
+fi
+if ! SOCAT=$(command -v socat); then
+    echo "🚨 socat is not found."
+    exit 1
+fi
+if ! TESSERACT=$(command -v tesseract); then
+    echo "🚨 tesseract is not found."
+    exit 1
+fi
+if ! QUICKEMU=$(command -v quickemu); then
+    echo "🚨 quickemu is not found."
+    exit 1
+else
+    if ! $QUICKEMU --version | grep -q "$QUICKEMU_MIN_VERSION"; then
+        echo "🚨 quickemu version $QUICKEMU_MIN_VERSION or newer is required."
+        exit 1
+    else 
+        QUICKEMU_VER_LONG=$($QUICKEMU --version)
+    fi
+fi
+if ! QUICKGET=$(command -v quickget); then
+    echo "🚨 quickget is not found."
+    exit 1
 fi
 
 # Set edition suffix if needed
