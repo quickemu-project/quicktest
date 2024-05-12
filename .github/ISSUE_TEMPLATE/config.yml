@@ -1,0 +1,6 @@
+contact_links:
+
+  - name: Join the Discord community 💬
+    # link to our community Discord
+    url: https://wimpysworld.io/discord
+    about: 'Come chat with us! Ask for help, join our software development efforts, or just give us feedback!'
