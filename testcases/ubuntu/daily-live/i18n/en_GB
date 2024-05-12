@@ -1,0 +1,15 @@
+# Texts used in the test cases
+# TODO: Come up with a better format - maybe something that supports translation tools
+# TODO: Add more languages
+# TODO: Add more texts
+# TODO: Come up with a naming scheme
+
+# Tesseract language code appropriate for this language file 
+# (from man tesseract)
+# If you don't know the code, you can run tesseract --list-langs
+TESSERACT_LANG="eng"
+
+# source en_US
+# Then have any UK English overrides (if there are any
+# Other languages can do this, such has have a base fr_FR, and 
+# a fr_CA which may change some, but sources the fr_FR one)

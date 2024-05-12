@@ -1,0 +1,870 @@
+#!/usr/bin/env bash
+export LC_ALL=C
+
+# Quicktest - A script to automate testing of software in Quickemu VMs
+# Copyright (C) 2024  Alan Pope
+# SPDX-License-Identifier: MIT
+
+readonly VERSION="0.1.0"
+
+# Whoami!?
+LAUNCHER=$(basename "${0}")
+
+# Whereami!?
+readonly QT_SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# What time is it? (used in log file names)
+QT_START_TIME=$(date +%Y%m%d-%H%M%S)
+
+# Lots of echo or not so much?
+# This maybe needs work, as we're already pretty
+# frugal with the output. But we can always add more
+DEBUG=true
+
+# A one line per testcase run summary log file. Essentially success or failure
+QT_SUMMARY_LOG="${QT_SUMMARY_LOG:-$QT_SCRIPT_DIR/quicktest.log}"
+
+# Filename of the main log file generated on a per-testcase basis
+# The full path is set further down once the generated QT_RESULTS
+# folder is known and created
+QT_LOG="${QT_LOG:-quicktest.log}"
+
+# The location where the test case scripts are located
+QT_TESTCASES_DIR="${QT_TESTCASES_DIR:-$QT_SCRIPT_DIR/testcases}"
+
+# Location of the keymaps for qemu
+QT_KEYMAPS_DIR="${QT_KEYMAPS_DIR:-$QT_TESTCASES_DIR/keymaps}"
+
+# The location where quickget and quickemu will run, and thus
+# store the downloaded ISO files and disk images
+QUICKEMU_VM_DIR="${QUICKEMU_VM_DIR:-$QT_SCRIPT_DIR/machines}"
+
+# The display type used by quickemu when it launches qemu
+# This can be 'none' for none, 'spice' for a spice viewer
+QUICKEMU_DISPLAY="${QUICKEMU_DISPLAY:-spice}"
+
+# The default resolution of the VM display
+# Make sure these are divisible by 8 or qemu freaks out
+# but it will look fine in spice viewer. However any 
+# screenshots will be distorted like trapezoid.
+QUICKEMU_WIDTH="${QUICKEMU_WIDTH:-1408}"
+QUICKEMU_HEIGHT="${QUICKEMU_HEIGHT:-792}"
+
+# By default we expect the VM to have a network connection
+# however, some tests may behave differently with no network
+# So within those tests they should be able to disable the network
+# This variable can then be used to determine if the network is 
+# enabled or disabled
+QUICKEMU_NETWORK="${QUICKEMU_NETWORK:-true}"
+
+# There may be new options to pass to quickemu, so we allow
+# the user to specify them here.
+QUICKEMU_OPTS="${QUICKEMU_OPTS:-}"
+
+# We should figure out which tesseract options are optimal
+# for doing OCR of screenshots from the VM
+# Each test case can override this
+# The tessedit_write_images can be useful for peeking into the
+# internal analysis that tesseract does. It can be useful for 
+# seeing what tesseract sees.
+# Note --psm and -l must come before the others, if specified
+#TESSERACT_OCR_OPTIONS="--loglevel ALL -c tessedit_write_images=true"
+TESSERACT_OCR_OPTIONS="${TESSERACT_OCR_OPTIONS:---loglevel OFF quiet}"
+
+# We scale up images by 3x which might not be necessary in some cases.
+# Set this to zero to disable scaling. Otherwise it's a percentage
+QT_SCALE_IMAGE="${QT_SCALE_IMAGE_PC:-300%}"
+
+# The command we use to convert images. 
+QT_SCALE_COMMAND="${QT_SCALE_COMMAND:-/usr/bin/convert}"
+
+# Currently we default keyboard layout to en_US, but this
+# can be overridden by each test case
+# Note however that a keymaps/la_CO file must exist. Use
+# keymaps/en_US as a template
+QT_TEST_LANG="${QT_TEST_LANG:-en_US}"
+
+TESSERACT_LANG="${TESSERACT_LANG:-eng}"
+
+# If screenshots are taken, they're then turned into a compilation
+# timelapse video and the images are removed. This can be overridden
+# by each test case
+QT_KEEP_SCREENSHOTS="${QT_KEEP_SCREENSHOTS:-false}"
+
+# If we use tesseract-ocr to create text files from screenshots
+# we can choose to keep those text file results or not. The text files
+# can be useful for determining what went wrong in a test, and they
+# may also be useful for identifying what text on the screen was recognised
+# and so what should be included in test cases or not.
+QT_KEEP_TESSERACT_TEXT="${QT_KEEP_TESSERACT_TEXT:-false}"
+
+# After a successful run, we can create a timelapse video of the
+# screenshots taken during the test. This can be overridden by each
+# test case. But we still ask for ffmpeg to be installed.
+QT_CREATE_TIMELAPSE="${QT_CREATE_TIMELAPSE:-true}"
+
+# The output video path and filename
+QT_TIMELAPSE_VIDEO="${QT_TIMELAPSE_VIDEO:-quicktest.mp4}"
+
+# Screenshots have a sequentially increasing number, as well as a
+# descriptive test case in the file name. This is the counter.
+QT_SCREENSHOT_COUNT="${QT_SCREENSHOT_COUNT:-0}"
+
+# A tiny delay after each key-press inserted into qemu
+QEMU_INSERT_DELAY="${QEMU_INSERT_DELAY:-0.2}"
+
+# A timeout which is used when quicktest detects that the VM is already running
+# We show a message warning the user, so they have an opportunity to let the timer
+# run out, or press ctrl-c to stop the script before it does something unexpected
+QT_VM_WARNING_TIMEOUT="${QT_VM_WARNING_TIMEOUT:-10}"
+
+# You can disable the warning about the VM already running if you want, which may
+# be useful for follow-on tests which expect the VM to be running
+# Can be overridden in specific tests that need it
+QT_DISABLE_VM_WARNING="${QT_DISABLE_VM_WARNING:-false}"
+
+# Similarly to the above, we have a timeout for when quicktest detects that the disk
+# has been modified. 
+QT_DISK_WARNING_TIMEOUT="${QT_DISK_WARNING_TIMEOUT:-10}"
+
+# You can disable the warning about the disk image being modified if you want, which may
+# be useful for follow-on tests which expect the disk to be modified (e.g. by an installer)
+# Can be overridden in specific tests that need it
+QT_DISABLE_DISK_WARNING="${QT_DISABLE_DISK_WARNING:-false}"
+
+# At the end of the test run, once everything is complete, we use `open` to pop open the
+# default file manager on the host, showing the results of the test, as a convenience. 
+# quicktest is typically used on a QA person's machine, but may also be run in some CI
+# farm. So it's possible to disbale this behaviour.
+QT_OPEN_RESULTS="${QT_OPEN_RESULTS:-true}"
+
+# Minimum version of quickemu required
+QUICKEMU_MIN_VERSION="4.9.4"
+
+# Array of key mappings for qemu - e.g. M is shift-m
+# Each test case can override this, and each test case
+# may have only one, or many langiage files to support this
+# This is especially important when entering passwords
+# in the VM as they're not visible.
+declare -A KEYS
+
+# We need Bash 4.x or newer for this script
+if ((BASH_VERSINFO[0] < 4)); then
+    echo "🚨 Sorry, you need bash 4.0 or newer to run this script."
+    exit 1
+fi
+
+# Catch ctrl+c because we don't want to have to stab it numerous times
+# to get out of all these nested scripts when things Go Bad(TM)
+# trap ctrl-c and call ctrl_c()
+trap ctrl_c INT
+function ctrl_c() {
+    echo "💥 Trapped CTRL-C"
+    exit 99
+}
+
+# We are a bit excessive with logging, but it's useful for debugging
+# We will likely reduce the amount it spams the console at some point
+function qt_start_logging() {
+    exec 3>&1 4>&2
+    trap 'exec 2>&4 1>&3' 0 1 2 3
+    exec 1> >(tee -a "$QT_FULL_LOG") 2>&1
+    qt_echo "🪵 Started logging: $QT_FULL_LOG"
+}
+
+function qt_echo {
+    if [ ! -z "$DEBUG" ]; then
+        local datestamp
+        datestamp=$(date +"%Y%m%d-%H%M%S")
+        echo "[$datestamp] $*"
+    fi
+}
+
+# I love Frank, Ian and Glenn, and their letters. They're the best.
+function qt_usage() {
+    echo "             _      _    _            _ "  
+    echo "  __ _ _   _(_) ___| | _| |_ ___  ___| |_" 
+    echo " / _' | | | | |/ __| |/ / __/ _ \/ __| __|"
+    echo "| (_| | |_| | | (__|   <| |_| __/\__ \ |_ "
+    echo " \__, |\__,_|_|\___|_|\_\\\__\___||___/\__|"
+    echo "    |_| v${VERSION}, using Quickemu ${QUICKEMU_VER_LONG}"
+    echo "--------------------------------------------------------------------------------"
+    echo " Project - https://github.com/quickemu-project/quicktest"
+    echo " Discord - https://wimpysworld.io/discord"
+    echo "--------------------------------------------------------------------------------"
+    echo 
+    echo "Usage"
+    echo "  ${LAUNCHER} testcase <arguments>"
+    echo "  ${LAUNCHER} test_install_entire_disk_with_defaults"
+    echo 
+    echo "Advanced usage:"
+    echo "  ${LAUNCHER} test_boot_to_login alpine v3.11"
+    echo "  ${LAUNCHER} test_install_entire_disk_with_defaults ubuntu-mate daily-live"
+    echo
+    echo "Arguments"
+    echo " --help         (-h)        : Show this help message"
+    echo " --list-tests   (-ls)       : Show all available tests, filtered by OS/Release/Edition if specified"
+    echo " --version      (-v)        : Show this help message"
+}
+
+# List all available tests from the tests directory. 
+# Each test can put a few lines of comments at the top. We output them
+# here so you can get a list with a description of each one.
+function qt_list_tests() {
+    local os
+    local release
+    local tmpfile
+    tmpfile=$(mktemp)
+    echo "Available test cases"
+    echo "OS | Release / Edition | Test case | Short description" > $tmpfile
+    for os in "$QT_TESTCASES_DIR"/*; do
+        if [ -d "$os" ]; then
+            if [ "$(basename $os)" == "keymaps" ]; then
+                continue
+            fi
+            for release in "$os"/*; do
+                if [ -d "$release" ]; then
+                    find $release/test_* -type f |
+                    while read file; do
+                        echo "$(basename $os) | $(basename $release) | $(basename $file) | $(head -n 1 "$file" | grep '^#')" >> "$tmpfile"
+                    done
+                fi
+            done
+        fi
+    done
+    column -t -s '|' "$tmpfile"
+    rm "$tmpfile"
+}
+
+###
+### SNIPPETS - functions used by tests
+###
+###
+### NETWORK - functions to enable and disable or otherwise
+###           manipulate the network
+
+# Re-enable the network by re-adding the device
+# TODO figure out syntax
+# As yet untested
+function qt_enable_network() {
+    qt_echo "🛜 Enabling network"
+    sendkey "netdev_add nic"
+}
+
+# TODO figure out syntax
+# As yet untested
+function qt_disable_network() {
+    qt_echo "🛜 Disabling network"
+    sendkey "netdev_del id=nic"
+}
+
+###
+### WAIT - functions to wait for various OS events to occur
+###
+
+# A simple sleep to wait for a bit. We should try and avoid using
+# these if possible, so tests can go faster, and not have random
+# delays. However, sometimes we need to wait for something to happen
+function qt_wait_for_seconds() {
+    local seconds="$1"
+    qt_echo "⏳ $seconds s"
+    local seconds=$1
+    sleep "$seconds"
+}
+
+# This shouldn't be used in real tests I supsect but only for debugging
+function qt_wait_for_host_keypress() {
+    qt_echo "✋ Waiting for host keypress"
+    read -n 1 -s -r -p "Press any key to continue"
+}
+
+
+# This is way more useful than the above, as it waits for a specific
+# piece of text to appear on the screen. We take a screenshot and then
+# use tessaract to OCR the text. We can then search for the text in the
+# resulting output. We can also invert the image and try again, as some
+# text might be hard for tesseract to read in the default format.
+# Note that we also specify a number of retries and an interval between
+# each try. This is useful because people have different speed computers
+# making it hard to know when a task is done. So we just do what a human does,
+# and look at the screen until we see what we want.
+# For a long running event like an install doing copying of files, which may take
+# 10 minutes or more, perhaps have 10 retries with a 60 second interval.
+function qt_wait_for_text() {
+    local test_name="$1"
+    local text="$2"  
+    local retries=$3
+    local interval=$4
+    for c in $( seq 1 $retries ); do
+        qt_echo "🔁 $c / $retries «$text» "
+        qt_screenshot_ppm "$test_name"
+        # We only ever OCR the most recent image, so we just send the text name and the screenshot count
+        if qt_search_screenshot "$test_name" "$text"; then
+            return 0
+        fi
+        qt_wait_for_seconds "$interval"
+    done
+    qt_test_fail "Coulnd't find text «$text» in screenshot «$QT_SCREENSHOT_COUNT» after $retries retries"
+}
+
+###
+### TTY - functions to handle using the TTY console from the qemu monitor
+###
+
+# Functions to handle using the TTY console from the qemu monitor 
+# This could be useful to run commands on the host by logging in from the
+# console, or to switch to a different TTY to see what's happening or
+# capture logs
+function qt_switch_to_tty() {
+    tty="$1"
+    qt_echo "🖳 Switching to tty$tty"
+    qt_sendkey "ctrl-alt-f$tty"
+}
+
+###
+### SYSTEM - functions to manipulate the VM system
+###
+
+# A rather brutal way to turn the VM off and on again
+function qt_reboot_vm() {
+    qt_echo "🔃 Rebooting the VM"
+    qt_send_command "system_reset"
+}
+
+# This powers off the VM, and should really only be used
+# at the end when cleaning up.
+function qt_poweroff_vm() {
+    qt_echo "🔌 Powering off the VM"
+    # Qemu has a 'system_powerdown' command but that seems broken (qemu bug 1410)
+    # qt_send_command "system_powerdown"
+    # So for now we'll manually kill the machine but this is not ideal (quickemu bug 1195)
+    local quickemu_pid=""
+    quickemu_pid="${QUICKEMU_VM_DIR}/${OS}-${RELEASE}${EDITIONSUFFIX}/${OS}-${RELEASE}${EDITIONSUFFIX}.pid"
+    if [ -e "$quickemu_pid"  ]; then
+        if ! kill $(cat "$quickemu_pid"); then
+            qt_echo "🚨 Failed to power off the VM"
+            exit 1
+        else
+            rm "$quickemu_pid"
+        fi
+    fi
+}
+
+###
+### KEYBOARD - functions to manipulate the VM keyboard
+###
+
+# This sends a key-combo like ctrl-alt-delete or 
+# meta_l-up to maximise a window
+function qt_send_key_combo() {
+    local key_combo="$1"
+    qt_echo "⌨️ «$key_combo»"
+    local qemu_cmd="sendkey $key_combo"
+    #echo "$qemu_cmd | $QEMU_SOCKET_COMMAND"
+    echo "$qemu_cmd" | $QEMU_SOCKET_COMMAND > /dev/null
+    # Be nice if we detected if the key combo was successful, rather 
+    # than have a timeout. But that's a problem for another day.
+    sleep "$QEMU_INSERT_DELAY"
+}
+
+ # This similar but only sends a single key and references the
+ # keys look up list to map the legend on the key to the names
+ # by which qemu knows them.
+ # e.g. M is shift-m.
+ function qt_send_key() {
+    local key_name="$1"
+    # Don't send empty keypresses
+    if [ ! "$key_name" == "" ]; then
+        local qemu_key_name="${KEYS[$key_name]}"
+        local qemu_cmd="sendkey $qemu_key_name"
+        qt_echo "⌨️ «$key_name»"
+        #echo "$qemu_cmd | $QEMU_SOCKET_COMMAND"
+        echo "$qemu_cmd" | $QEMU_SOCKET_COMMAND > /dev/null
+        # Be nice if we detected if the key combo was successful, rather 
+        # than have a timeout. But that's a problem for futur popey.
+        sleep "$QEMU_INSERT_DELAY"
+    fi
+}
+
+# Useful for typing in a word, or a command, or a password
+function qt_send_string() {
+    local input_string="$1"
+    while IFS= read -r -n1 char; do
+        qt_send_key "$char"
+    done <<< "$input_string"
+}
+
+# A simple helper that types the string and then presses return key
+function qt_send_string_return() {
+    local input_string="$1"
+    qt_echo "⌨️ «$input_string» then «RETURN»"
+    qt_send_string "$input_string"
+    qt_send_key_combo "ret"
+}
+
+# Function to send a series of keypresses followed by tab key
+function qt_send_string_tab() {
+    local input_string="$1"
+    qt_echo "⌨️ Typing «$input_string» then «TAB»"
+    qt_send_string "$input_string"
+    qt_send_key_combo "tab"
+}
+
+function qt_send_command() {
+    local qemu_full_cmd="$1"
+    local qemu_cmd="$(echo $qemu_full_cmd | awk '{print $1}')"
+    local qemu_arg="$(echo $qemu_full_cmd | awk '{print $2}')"
+    # This may or may not expaand to be useful if we use some other
+    # weird qemu commands which have parameters. But for now, it's
+    # just a switch statement with two cases.
+    case "$qemu_cmd" in
+        screendump)
+            qemu_cmd="$qemu_cmd $(basename "$qemu_arg")"
+            ;;
+        *)
+            qt_echo " "
+            ;; 
+    esac
+    # This was informational but a bit much in log output
+    # qt_echo "ℹ️ Inserting command «$qemu_cmd»"
+    if ! echo "$qemu_full_cmd" | $QEMU_SOCKET_COMMAND > /dev/null; then
+        qt_echo "🚨 qemu command failed"
+        exit 1
+    fi
+}
+
+###
+### MOUSE - functions to manipulate the VM mouse
+###
+
+## TODO: move mouse, and mouse click functions
+
+### SCREENSHOT - functions to take screenshots and search for text
+
+function qt_screenshot_ppm() {
+    local test_name="$1"
+    # Increment the screenshot counter, so we can keep track of them in
+    # sequence
+    QT_SCREENSHOT_COUNT=$((QT_SCREENSHOT_COUNT+1))
+    local screenshot_count
+    screenshot_count=$(printf "%04d" $QT_SCREENSHOT_COUNT)
+    local ppmname="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name".ppm
+    qt_echo "📷 $(basename $ppmname)"
+    qt_send_command "screendump $ppmname"
+    # Make sure ppm file actually exists after the above command
+    if [ ! -f "$ppmname" ]; then
+        qt_echo "🚨 Screenshot failed"
+        exit 1
+    fi
+}
+
+function qt_run_tesseract() {
+    local ocrimage="$1"
+    local ocrtext="$2"
+    if ! $TESSERACT -l "$TESSERACT_LANG" "$ocrimage" "$ocrtext" $TESSERACT_OCR_OPTIONS ; then
+        qt_echo "🚨 OCR failed"
+        exit 1
+    fi
+}
+
+function qt_grep_screenshot_text() {
+    local searchterm="$1"
+    local screenshot_count="$2"
+    local ocrtext="$3"
+    qt_echo "🔍 «$searchterm» in screenshot «$screenshot_count»"
+    if ! grep -q "$searchterm" "$ocrtext"; then
+        qt_echo "❌ «$searchterm»"
+        return 1
+    else
+        qt_echo "✅ «$searchterm»"
+        return 0
+    fi
+}
+
+function qt_search_screenshot() {
+    local test_name="$1"
+    local searchterm="$2"
+    local screenshot_count
+    screenshot_count=$(printf "%04d" $QT_SCREENSHOT_COUNT)
+    local dumpedimage="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name"
+    # The text file generated by tesseract lives in the same results folder and is
+    # named the same as the screenshot, but with a .txt extension
+    local ocrtext=$dumpedimage
+    # If we need to scale the image (to make it easier for tesseract to find things)
+    # then we do that here. We scale by 300% by default, but this can be overridden
+    if [ "$QT_SCALE_IMAGE" == "0" ]; then
+        local scaledimage
+        if ! $QT_SCALE_COMMAND "$dumpedimage".ppm -scale "$QT_SCALE_IMAGE" "$scaledimage.ppm"; then
+            qt_echo "🚨 Image scaling failed"
+            exit 1
+        else
+            # Image was scaled, so we need to OCR the scaled image
+            # Tesseract adds the .txt suffix when creating output files.
+            qt_run_tesseract "$scaledimage.ppm" "$ocrtext"
+            # We don't keep the scaled image, so we delete it now
+            rm "$scaledimage.ppm"
+        fi
+    else
+        # If we aren't scaling then we just use the original image as captured
+        # Tesseract adds the .txt suffix when creating output files.
+        qt_run_tesseract "$dumpedimage.ppm" "$ocrtext"
+    fi
+    qt_grep_screenshot_text "$searchterm" "$screenshot_count" "$ocrtext.txt"
+}
+
+function qt_ocr_only() {
+    local test_name="$1"
+    # Scans the previous screenshot, without looking for specific text
+    local screenshot_count
+    screenshot_count=$(printf "%04d" $QT_SCREENSHOT_COUNT)
+    local ppmname="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name".ppm
+    local ppmx3name="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name"_x3.ppm
+    local txtname="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name"
+
+    if ! $QT_SCALE_COMMAND "$ppmname" -scale 300% "$ppmx3name"; then
+        qt_echo "🚨 Image scaling failed"
+        exit 1
+    fi
+    if ! $TESSERACT -l "$TESSERACT_LANG" "$ppmx3name" "$txtname" $TESSERACT_OCR_OPTIONS ; then
+        qt_echo "🚨 OCR failed"
+        exit 1
+    fi
+    # Delete the 3x screenshot as we don't need it
+    rm "$ppmx3name"
+}
+
+
+# Load in the actual test case we're about to launch
+function qt_source_quicktest_scripts() {
+    if [ ! -f "${QT_TESTCASES_DIR}"/"${OS}"/"${RELEASE}${EDITIONPATH}"/"${TESTCASE}" ]; then
+        qt_echo "🚨 Test case ${TESTCASE} does not exist for ${OS}-${RELEASE}${EDITIONSUFFIX}."
+        exit 1
+    fi
+    if source "${QT_TESTCASES_DIR}"/"${OS}"/"${RELEASE}${EDITIONPATH}"/"${TESTCASE}"; then
+        qt_echo "✅ Source quicktest scripts succeeded."
+        return 0
+    else
+        qt_echo "🚨 Source quicktest scripts failed."
+        return 1
+    fi
+}
+
+# Launch quickget to download the ISO and create the disk image
+# If the disk image already exists, we still run this, as it will
+# update the disk image if the ISO has changed (in some cases)
+# It also checks the checksum of theqt_test_fail ISO
+function qt_launch_quickget() {
+    qt_echo "🚀 quickget ${OS} ${RELEASE} ${EDITION} in ${QUICKEMU_VM_DIR}"
+    pushd "${QUICKEMU_VM_DIR}" > /dev/null || return 1
+    if ! $QUICKGET "${OS}" "${RELEASE}" "${EDITION}"; then
+        return 1
+    else
+        qt_echo "✅ quickget succeeded."
+        popd > /dev/null || return 1
+        return 0
+    fi
+}
+
+# Launch quickemu to start the VM
+function qt_launch_quickemu() {
+    qt_echo "🚀 Launch quickemu ${OS}-${RELEASE}${EDITIONSUFFIX}.conf in ${QUICKEMU_VM_DIR}"
+    pushd "${QUICKEMU_VM_DIR}" > /dev/null || return 1
+    # Check to see if it's already running
+    if [ -f "${OS}-${RELEASE}${EDITIONSUFFIX}/${OS}-${RELEASE}${EDITIONSUFFIX}.pid" ]; then
+        # Do we care though?
+        if $QT_DISABLE_VM_WARNING ; then
+            qt_echo "▶️ VM is already running as expected. Continuing."
+        else
+            qt_echo "⚠️ VM is already running. Continue only if it's in a known state."
+            qt_wait_for_seconds "$QT_VM_WARNING_TIMEOUT"
+        fi
+    fi
+    # Check if the disk image exists and already likely contains an OS
+    if [ -f "${OS}-${RELEASE}${EDITIONSUFFIX}/disk.qcow2" ]; then
+        qt_echo "🖴 Disk image exists"
+        local disk_size_units=$(qemu-img info "${OS}-${RELEASE}${EDITIONSUFFIX}/disk.qcow2" | grep ^disk | awk -F ' ' '{print $4}')
+        # Check if it's likely to contain data (based on the arbitrary size being at least 1GiB)
+        if [ "$disk_size_units" == "GiB" ]; then
+            # Do we care though?
+            if $QT_DISABLE_DISK_WARNING ; then
+                qt_echo "🖴 Disk image likely contains data. Continuing."
+            else
+                qt_echo "⚠️ ${OS}-${RELEASE}${EDITIONSUFFIX}/disk.qcow2 likely contains data"
+                qt_wait_for_seconds "$QT_DISK_WARNING_TIMEOUT"
+            fi
+        fi
+    else
+        qt_echo "✅ Disk image does not yet exist."
+    fi
+    # By default we have network connection, but we may disable that for some tests
+    if ! $QUICKEMU_NETWORK; then
+        qt_echo "🚨 Network is disabled"
+        QUICKEMU_OPTS="${QUICKEMU_OPTS} --offline"
+    fi
+    if ! $QUICKEMU $QUICKEMU_OPTS --display "$QUICKEMU_DISPLAY" --width "$QUICKEMU_WIDTH" --height "$QUICKEMU_HEIGHT" --vm "${OS}-${RELEASE}${EDITIONSUFFIX}".conf; then
+        # this is due to https://github.com/quickemu-project/quickemu/issues/1170
+        # fixed in later releases
+        # Once quickemu is updated we remove popd and change to return 1
+        # popd > /dev/null || return 1
+        return 0 
+    else
+        popd > /dev/null || return 1
+        return 0
+    fi
+}
+
+# We use the socket to inject keypresses into qemu, and reboot it
+# Let's make sure the socket exists, and if it does, we'll use socat as
+# the command to do the injection
+# https://gist.github.com/mvidner/8939289
+function qt_get_qemu_socket() {
+    QEMU_SOCKET="${QUICKEMU_VM_DIR}/${OS}-${RELEASE}${EDITIONSUFFIX}"/"${OS}-${RELEASE}${EDITIONSUFFIX}"-monitor.socket
+    if [ ! -S "${QEMU_SOCKET}" ]; then
+        qt_echo "🚨 QEMU socket is not found."
+        return 1
+    else
+        qt_echo "ℹ️ QEMU socket is ${QEMU_SOCKET}"
+        #QEMU_SOCKET_COMMAND="nc -N -U $QEMU_SOCKET"
+        # Now using socat, which seems decent, but it puts all kinds of 
+        # garbage on the screen. We'll redirect it to /dev/null
+        # It might be qemu, not socat, but whatever.
+        QEMU_SOCKET_COMMAND="$SOCAT - unix-connect:$QEMU_SOCKET" > /dev/null
+        return 0
+    fi
+}
+
+function qt_load_texts() {
+    # Load the texts for the current language
+    local lang="${QT_TESTCASES_DIR}"/"${OS}"/"${RELEASE}${EDITIONPATH}"/i18n/"$QT_TEST_LANG"
+    if [ -e "$lang" ]; then
+        source "$lang"
+        qt_echo "✅ Load texts succeeded."
+        return 0
+    else
+        qt_echo "🚨 Load texts failed."
+        return 1
+    fi
+}
+
+# Load in the key map things for Qemu.
+function qt_load_keys() {
+    if [ -f "${QT_KEYMAPS_DIR}/${QT_TEST_LANG}" ]; then
+        source "${QT_KEYMAPS_DIR}/${QT_TEST_LANG}"
+        qt_echo "✅ Load keys succeeded."
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Here we actually launch the test case. 
+function qt_launch_testcase() {
+    qt_echo "🚀 Launch test case ${OS}/${RELEASE}${EDITIONPATH}/${TESTCASE}"
+    # Display the first ten lines if they start with a comment
+    head -n 10 "${QT_TESTCASES_DIR}"/"${OS}"/"${RELEASE}${EDITIONPATH}"/"${TESTCASE}" | grep "^#"
+    "$TESTCASE"
+}
+
+function qt_write_summary_log() {
+    local emoji="$1"
+    if [ ! $QT_SUMMARY_LOG == "" ]; then
+        local qt_end_time=$(date +%Y%m%d-%H%M%S)
+        echo "$emoji ${QT_START_TIME} ${qt_end_time} ${OS} ${RELEASE} ${EDITIONPATH} ${TESTCASE}"  >> "$QT_SUMMARY_LOG"
+    fi
+}
+
+# The standard place we end up when stuff fails. We then spit out the function name
+# that last called, and a link to the log and the results directory
+function qt_test_fail() {
+    qt_echo "🚨 Test failed."
+    qt_echo "Last error in: $1"
+    qt_echo "🪵 $QT_FULL_LOG"
+    qt_echo "📁 $QT_RESULTS"
+    if $QT_OPEN_RESULTS ; then
+        open "$QT_RESULTS"
+    fi
+    qt_write_summary_log "🚨"
+    exit 99
+}
+
+# Sometimes the tests pass. This is where we end up when that happens
+function qt_test_pass() {
+    qt_echo "🪵 $QT_FULL_LOG"
+    qt_echo "📁 $QT_RESULTS"
+    qt_echo "🎉 Test passed: $1"
+    if $QT_OPEN_RESULTS ; then
+        open "$QT_RESULTS"
+    fi
+    qt_write_summary_log "🎉"
+
+}
+
+# This is where we clean up after ourselves. We optionally make a timelapse video from the screenshots
+function qt_cleanup() {
+    qt_echo "🧼 Cleanup"
+    pushd "$QT_RESULTS" > /dev/null || return 1
+    if $QT_CREATE_TIMELAPSE ; then
+        qt_echo "📹 Making video"
+        if ! $FFMPEG -hide_banner -loglevel error -framerate 1/3 -pattern_type glob -i 'screenshot_*.ppm' -c:v libx264 -pix_fmt yuv420p "$QT_TIMELAPSE_VIDEO"; then
+            qt_echo "🚨 ffmpeg failed"
+        fi 
+    fi
+    if $QT_KEEP_SCREENSHOTS ; then
+        qt_echo "ℹ️ Keeping images as requested"
+    else
+        qt_echo "ℹ️ Removing images as requested"
+        rm screenshot_*.ppm
+    fi
+    if $QT_KEEP_TESSERACT_TEXT ; then
+        qt_echo "ℹ️ Keeping text files as requested"
+    else
+        qt_echo "ℹ️ Removing text files as requested"
+        rm screenshot_*.txt
+    fi
+    popd > /dev/null || return 1
+}
+
+###
+### MAIN
+###
+
+# Check for required commands
+if $CREATE_TIMELAPSE && ! FFMPEG=$(command -v ffmpeg); then
+    echo "🚨 ffmpeg is not found."
+    exit 1
+fi
+if ! SOCAT=$(command -v socat); then
+    echo "🚨 socat is not found."
+    exit 1
+fi
+if ! TESSERACT=$(command -v tesseract); then
+    echo "🚨 tesseract is not found."
+    exit 1
+fi
+if ! QUICKEMU=$(command -v quickemu); then
+    echo "🚨 quickemu is not found."
+    exit 1
+else
+    if ! $QUICKEMU --version | grep -q "$QUICKEMU_MIN_VERSION"; then
+        echo "🚨 quickemu version $QUICKEMU_MIN_VERSION or newer is required."
+        exit 1
+    else 
+        QUICKEMU_VER_LONG=$($QUICKEMU --version)
+    fi
+fi
+if ! QUICKGET=$(command -v quickget); then
+    echo "🚨 quickget is not found."
+    exit 1
+fi
+
+# Take command line arguments
+if [ $# -lt 1 ]; then
+    qt_usage
+    exit 0
+else    case "${1}" in
+    --list-tests|-ls)
+        qt_list_tests
+        exit;;
+    -version|--version|-v)
+        echo "quickemu ${VERSION}"
+        exit;;
+    -h|--h|-help|--help)
+        qt_usage
+        exit;;
+    *)
+        TESTCASE="${1}"
+        if [ -z "$(find "${QT_TESTCASES_DIR}" -type f -name "${TESTCASE}")" ]; then
+            echo "🚨 Test case ${TESTCASE} does not exist."
+            exit 1
+        fi
+        shift
+
+        OS=${1:-"ubuntu"}
+        shift
+
+        RELEASE=${1:-"24.04"}
+        shift
+
+        EDITION=${1:-""}
+        ;;
+    esac
+fi
+
+# Set edition suffix if needed
+if [ ! "${EDITION}" == "" ]; then
+    EDITIONSUFFIX="-${EDITION}"
+    EDITIONPATH="/${EDITION}"
+else
+    EDITIONSUFFIX=""
+    EDITIONPATH=""
+fi
+
+QT_RESULTS="$(pwd)/results/${OS}/${RELEASE}${EDITIONPATH}/${TESTCASE}/${QT_START_TIME}"
+QT_FULL_LOG="$QT_RESULTS/$QT_LOG"
+
+if  ! mkdir -p "$QT_RESULTS";  then
+    echo "🚨 Failed to create results directory."
+    exit 1
+fi
+
+# We source the quicktest scripts, because they may override sett
+if ! qt_source_quicktest_scripts; then
+    echo "🚨 Source quicktest scripts failed."
+    exit 1
+fi
+
+# Start logging
+if ! qt_start_logging ; then
+    echo "🚨 Start logging failed."
+    exit 1
+fi
+
+# We start by running whatever is necessary to configure the test
+# This function lives inside the test, and it maybe change 
+# quickget or quickemu launch settings, so that's why we run it here.
+if ! test_setup; then
+    echo "🚨 Test setup failed."
+    exit 1
+fi
+
+# Run quickget to get (or check) the install image
+if ! qt_launch_quickget; then
+    echo "🚨 quickget failed."
+    exit 1
+fi
+
+# Launch the VM
+if ! qt_launch_quickemu; then
+    echo "🚨 quickemu failed."
+    exit 1
+fi
+
+# Obtain the socket from Qemu so wQEMUe can poke keypresses into the VM
+# and trigger screenshot captures
+if ! qt_get_qemu_socket; then
+    echo "🚨 Qemu socket is not found."
+    exit 1
+fi
+
+# Load the keymaps which map keys for different layouts
+if ! qt_load_keys; then
+    echo "🚨 Load keys ${QT_KEYMAPS_DIR}/${QT_TEST_LANG} failed."
+    exit 1
+fi
+
+if ! qt_load_texts; then
+    echo "🚨 Load texts ${QT_TEXTS_DIR}/${QT_TEST_LANG} failed."
+    exit 1
+fi
+
+# Finally we launch the actual test case.
+if ! qt_launch_testcase; then
+    echo "🚨 Test case ${TESTCASE} failed."
+    exit 1
+fi
+
+# If the test case passes, we clean up after ourselves
+qt_cleanup
+qt_test_pass "${TESTCASE}"
+
+# Fin

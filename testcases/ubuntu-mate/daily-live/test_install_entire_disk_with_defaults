@@ -1,0 +1,187 @@
+# Install Ubuntu MATE daily live (oracular) using defaults
+########################################################################################
+#                                                                                      #
+#        Name: test_install_entire_disk_with_defaults                                  #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-10                                                              #
+#     Version: 1                                                                       #
+# Description: Do a clean install of Ubuntu MATE 24.10 using all the default options   #
+#                                                                                      #
+########################################################################################
+
+function test_setup() {
+    # Set the test user and password for the installer
+    # Put these before sourcing the texts, as some of the texts
+    # may use these variables
+    
+    test_user="Lola Chang"
+    test_password="Correct.horse_battery-staple"
+}
+
+function test_post_boot_grub() {
+    # Wait a while for EUFI or BIOS to pass
+    # We could skip having this function, but it's nice to have
+    # So we have the opportunity to click that stupid dialog
+    qt_wait_for_seconds 10
+    # Wait for the grub menu
+    qt_wait_for_text "$FUNCNAME" "$text_console_gnu_grub" 10 5
+    qt_screenshot_ppm "$FUNCNAME"
+    # Press enter on the 'Try or install Ubuntu' GRUB option
+    qt_send_key "return"
+}
+
+function test_installer_initial_load() {
+    # Wait for the installer to load
+    # Takes a while initially to get started so we give it 10 loads of 30 seconds
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_title" 10 30
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_body" 10 3
+    qt_send_key "tab"
+    qt_send_key "return"
+}
+
+function test_installer_accessibility_screen() {
+    # We should be on the Accessibility screen
+    qt_wait_for_text "$FUNCNAME" "$text_installtion_accessibility_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installtion_accessibility_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_keyboard_screen() {
+    # We should be on the Keyboard screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_keyboard_layout_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_keyboard_layout_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"    
+}
+
+function test_installer_internet_connection_screen() {
+    # We should be on the Internet Connection screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_internet_connection_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_internet_connection_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_install_ubuntu_screen() {
+    # We should be on the Try or Install Ubuntu screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_try_or_install_ubuntu_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_try_or_install_ubuntu_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_type_of_install_screen() {
+    # We should be on the Type of Installation screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_type_of_installation_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_type_of_installation_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_applications_screen() {
+    # We should be at the Applications screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_applications_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_applications_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_optimize_your_computer_screen() {
+    # We should be at the Optimize your computer screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_optimize_your_computer_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_optimize_your_computer_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_default_disk_setup_screen() {
+    # We should be at the disk setup screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_default_disk_setup_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_default_disk_setup_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_create_your_account_screen() {
+    # We should be at the create your account screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_create_your_account_title" 10 5
+    qt_send_string_tab "$test_user"
+    qt_send_key "tab"
+    qt_send_key "tab"
+    qt_send_string_tab "$test_password"
+    # Jump over password visibility button
+    qt_send_key "tab"
+    qt_send_string_tab "$test_password"
+    # Jump to Active directory checkbox
+    qt_send_key "tab"
+    # Jump to Back button
+    qt_send_key "tab"
+    # Jump to Next button
+    qt_send_key "tab"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "return"
+}
+
+function test_installer_select_your_timezone_screen() {
+    # We should be at the Select your timezone screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_select_your_timezone_title" 10 5
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_ready_to_install_screen() {
+    # We should be at the Ready to install screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_ready_to_install_title" 10 5
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key_combo "shift-tab"
+    # Punch the green install button and hope it works
+    qt_send_key "return"
+}
+
+function test_installer_installation_complete_screen() {
+    # Once the slide show is done, and so is the installation, we should get
+    # the installation complete screen
+    # This can take quite a while, even on a modern computer
+    qt_wait_for_text "$FUNCNAME" "$text_installation_complete_body1" 20 40
+    qt_wait_for_text "$FUNCNAME" "$text_installation_complete_body2" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_wait_for_installation_medium() {
+    # Wait for the installation medium to be removed
+    qt_wait_for_text "$FUNCNAME" "$text_remove_installation_medium" 10 5
+    qt_send_key "return"
+}
+
+function test_power_off_vm() {
+    # send power off
+    qt_poweroff_vm
+}
+
+function test_install_entire_disk_with_defaults() {
+    test_post_boot_grub
+    test_installer_initial_load
+    test_installer_accessibility_screen
+    test_installer_keyboard_screen
+    test_installer_internet_connection_screen
+    test_installer_install_ubuntu_screen
+    test_installer_type_of_install_screen
+    test_installer_applications_screen
+    test_installer_optimize_your_computer_screen
+    test_installer_default_disk_setup_screen
+    test_installer_create_your_account_screen
+    test_installer_select_your_timezone_screen
+    test_installer_ready_to_install_screen
+
+    # Insert slideshow tests here for each slide
+
+    test_installer_installation_complete_screen
+    test_installer_wait_for_installation_medium
+
+    # Figure out eject syntax
+    # For now, we just shut it off
+
+    test_power_off_vm
+}

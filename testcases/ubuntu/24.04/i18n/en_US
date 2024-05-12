@@ -1,0 +1,79 @@
+# Texts used in the test cases
+# TODO: Come up with a better format - maybe something that supports translation tools
+# TODO: Add more languages
+# TODO: Add more texts
+# TODO: Come up with a naming scheme
+
+# Tesseract language code appropriate for this language file 
+# (from man tesseract)
+# If you don't know the code, you can run tesseract --list-langs
+TESSERACT_LANG="eng"
+
+text_console_gnu_grub="GNU GRUB"
+
+# For many of these texts I've chosen the window tirle and
+# something from the content area within the window
+# This is to make double sure the window has fully painted
+# before we start trying to press buttons
+# This may be overkill. We'll see.
+
+text_installation_welcome_to_ubuntu_title="Welcome to Ubuntu"
+text_installation_welcome_to_ubuntu_body="Choose your language"
+
+text_installtion_accessibility_title="Accessibility"
+text_installtion_accessibility_body="Accessibility in Ubuntu"
+
+text_installation_keyboard_layout_title="Keyboard layout"
+text_installation_keyboard_layout_body="Select your keyboard layout"
+
+text_installation_internet_connection_title="Internet connection"
+text_installation_internet_connection_body="Connect to the internet"
+
+text_installation_try_or_install_ubuntu_title="Try or install Ubuntu"
+text_installation_try_or_install_ubuntu_body="What do you want to do with Ubuntu?"
+
+text_installation_type_of_installation_title="Type of installation"
+text_installation_type_of_installation_body="How would you like to install Ubuntu?"
+
+text_installation_applications_title="Applications"
+text_installation_applications_body="Default selection"
+
+text_installation_optimize_your_computer_title="Optimise your computer"
+text_installation_optimize_your_computer_body="Install recommended proprietary software"
+
+text_installation_default_disk_setup_title="Disk setup"
+text_installation_default_disk_setup_body="How do you want to install Ubuntu"
+
+text_installation_create_your_account_title="Create your account"
+text_installation_create_your_account_body="Use Active Directory"
+
+text_installation_select_your_timezone_title="Select your timezone"
+
+text_installation_ready_to_install_title="Ready to install"
+
+# Installation finished screen
+
+text_installation_complete_title="Installation complete"
+text_installation_complete_body1="Ubuntu 24.04 LTS is installed"
+
+# Installation finished, reboot dialog
+
+text_remove_installation_medium="Please remove the installation medium, then press ENTER"
+
+# Post reboot
+
+text_not_listed="Not listed"
+text_literal_password="Password"
+
+# Logged in post-install
+text_desktop_first_run_one="Welcome to Ubuntu 24.04 LTS"
+
+# Ubuntu Pro dialog
+text_ubuntu_pro="Ubuntu Pro"
+text_enable_ubuntu_pro="Enable Ubuntu Pro"
+
+# Help improve Ubuntu dialog
+text_help_improve_ubuntu="Help improve Ubuntu"
+text_share_system_data="share system data with the Ubuntu team"
+
+
