@@ -288,7 +288,16 @@ function test_first_boot_desktop() {
     qt_screenshot_ppm "$FUNCNAME"
     qt_send_string_return "power off"
 
+    # Screenshot the power down dialog
+    qt_wait_for_seconds 1
+    qt_screenshot_ppm "$FUNCNAME"
+    
+    # Tab over to the 'Power off' button
+    qt_send_key "tab"
+    qt_send_key "return"
+
     # Daisy... Daisy...
+    # See if we can get a screenshot as the system tears down
     qt_screenshot_ppm "$FUNCNAME"
 
     # Done
