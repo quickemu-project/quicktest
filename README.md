@@ -2,6 +2,8 @@
 
 **Quickly and automatically test systems inside Quickemu virtual machines**
 
+Quicktest runs test cases automatically in [Qemu](https://www.qemu.org/) virtual machines using [Quickemu](https://github.com/quickemu-project/quickemu) by injecting keypresses and reading the screen with [Tesseract OCR](https://github.com/tesseract-ocr/tesseract).  
+
 ## Introduction
 
 **Quicktest** is a companion for the excellent [Quickemu](https://github.com/quickemu-project/quickemu) that attempts to automate some testing usually performed by volunteers in their own time, before release.
