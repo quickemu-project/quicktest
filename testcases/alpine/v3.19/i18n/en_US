@@ -1,0 +1,13 @@
+# Texts used in the Alpine test cases
+
+# Tesseract language code appropriate for this language file 
+# (from man tesseract)
+# If you don't know the code, you can run tesseract --list-langs
+TESSERACT_LANG="eng"
+
+text_console_gnu_grub="GNU GRUB"
+
+text_console_prompt_welcome="Alpine Linux 3.19"
+text_console_prompt_login="localhost login"
+
+text_console_login_banner="The Alpine Wiki"

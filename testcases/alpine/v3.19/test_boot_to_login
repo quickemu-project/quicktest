@@ -1,0 +1,70 @@
+# Test we can boot to the login screen and login and out then shutdown
+########################################################################################
+#                                                                                      #
+#        Name: test_boot_to_login                                                      #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-10                                                              #
+#     Version: 1                                                                       #
+# Description: A very simple test using a small distro to prove everything works       #
+#                                                                                      #
+########################################################################################
+
+function test_setup() {
+    test_alpine_username="root"
+}
+
+function test_post_boot_grub() {
+    # Wait for the grub menu
+    qt_wait_for_text "$FUNCNAME" "$text_console_gnu_grub" 10 5    
+}
+
+function test_console_login_prompt() {
+    # Wait for the console login prompt
+    qt_wait_for_text "$FUNCNAME" "$text_console_prompt_welcome" 5 10
+    qt_wait_for_text "$FUNCNAME" "$text_console_prompt_login" 1 1
+}
+
+function test_console_login_user() {
+    # Login
+    qt_send_string_return "$test_alpine_username"
+}
+
+function test_console_clear_screen() {
+    qt_wait_for_text "$FUNCNAME" "$text_console_login_banner" 10 5
+    qt_send_key_combo "ctrl-l"
+}
+
+function test_console_all_keys() {
+    qt_send_string_return "# !£$%^&*()_+"
+    qt_send_string_return "# 1234567890-="
+    qt_send_string_return "# qwertyuiop[]{}"
+    qt_send_string_return "# asdfghjkl;'"
+    qt_send_string_return "# \zxcvbnm,./<>?"
+    qt_screenshot_ppm "console_all_keys"
+}
+
+function test_console_logout_user() {
+    # Logout
+    qt_send_key_combo "ctrl-d"
+    qt_wait_for_text "$FUNCNAME" "$text_console_prompt_login" 10 5
+}
+
+function test_power_off_vm() {
+    qt_poweroff_vm
+}
+
+function test_boot_to_login() {
+    # The initial test_post_boot_grub fails because Alpine is super quick to boot!
+    # So we miss it in the time it takes to get started and take a screenshot
+    # We need to make this faster, or delay the boot of the OS somehow in Qemu?
+    # Maybe we need a qt_hold_key 'shift' or something to delay the boot?
+    # (sendkey in qemu has a hold key parameter which is optional and we could use
+    # for example 'sendkey shift 1000')
+    #test_post_boot_grub
+    test_console_login_prompt
+    test_console_login_user
+    test_console_clear_screen
+    test_console_all_keys
+    test_console_logout_user
+    test_power_off_vm
+}
