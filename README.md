@@ -8,6 +8,17 @@
 
 However, it could be expanded beyond that initial remit.
 
+## Recorded demo
+
+Here's an asciinema of running a test case in quicktest.
+
+[![quicktest demo](https://asciinema.org/a/V7bgjMrx0omiGzKgJOwIJFZqb.svg)](https://asciinema.org/a/V7bgjMrx0omiGzKgJOwIJFZqb)
+
+This is the resulting video which is a timelapse of all the screenshots taken during the above session.
+
+[![quicktest demo result](https://img.youtube.com/vi/sDBB7G9ht5E/0.jpg)](https://www.youtube.com/watch?v=sDBB7G9ht5E)
+
+
 ## Goals
 
 At a high level, this is what Quicktest is all about:
