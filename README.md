@@ -56,7 +56,13 @@ QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.
 There are many options, which can be overridden at launch.
 
 ```bash
-DEBUG=true QT_KEEP_SCREENSHOTS=false QT_KEEP_TESSERACT_TEXT=false QT_CREATE_TIMELAPSE=true QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.19
+DEBUG=true \
+QT_KEEP_SCREENSHOTS=false \
+QT_KEEP_TESSERACT_TEXT=false \
+QT_CREATE_TIMELAPSE=true \
+QUICKEMU_WIDTH=800 \
+QUICKEMU_HEIGHT=600 \
+./quicktest test_boot_to_login alpine v3.19
 ```
 
 Results will be found in `./results/`.
