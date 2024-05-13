@@ -50,35 +50,26 @@ Do not interact with the Qemu window as it may invalidate the test results.
 
 ```bash
 cd quicktest
-QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.11
+QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.19
 ```
 
 There are many options, which can be overridden at launch.
 
 ```bash
-DEBUG=true QT_KEEP_SCREENSHOTS=false QT_KEEP_TESSERACT_TEXT=false QT_CREATE_TIMELAPSE=true QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.11
+DEBUG=true QT_KEEP_SCREENSHOTS=false QT_KEEP_TESSERACT_TEXT=false QT_CREATE_TIMELAPSE=true QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.19
 ```
 
 Results will be found in `./results/`.
 
 ```bash
-tree results/alpine/v3.11/
-results/alpine/v3.11/
-└── test_boot_to_login
-    └── 20240511-134757
-        ├── quicktest.log
-        ├── quicktest.mp4
-        ├── screenshot_0001_test_console_login_prompt.ppm
-        ├── screenshot_0001_test_console_login_prompt.txt
-        ├── screenshot_0002_test_console_login_prompt.ppm
-        ├── screenshot_0002_test_console_login_prompt.txt
-        ├── screenshot_0003_test_console_login_prompt.ppm
-        ├── screenshot_0003_test_console_login_prompt.txt
-        ├── screenshot_0004_test_console_clear_screen.ppm
-        ├── screenshot_0004_test_console_clear_screen.txt
-        ├── screenshot_0005_console_all_keys.ppm
-        ├── screenshot_0006_test_console_logout_user.ppm
-        └── screenshot_0006_test_console_logout_user.txt
+tree results/
+results/
+└── alpine
+    └── v3.19
+        └── test_boot_to_login
+            └── 20240513-133341
+                ├── quicktest.log
+                └── quicktest.mp4
 ```
 
 ### Further tests
