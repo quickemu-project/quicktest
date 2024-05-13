@@ -44,6 +44,11 @@ text_installation_optimize_your_computer_body="Install recommended proprietary s
 text_installation_default_disk_setup_title="Disk setup"
 text_installation_default_disk_setup_body="How do you want to install Ubuntu"
 
+text_installation_advanced_disk_setup_title="Advanced features"
+
+text_installation_enter_passphrase_title="Disk passphrase"
+text_installation_enter_passphrase_body="Create a passphrase"
+
 text_installation_create_your_account_title="Create your account"
 text_installation_create_your_account_body="Use Active Directory"
 
@@ -60,13 +65,16 @@ text_installation_complete_body1="Ubuntu 24.10 is installed"
 
 text_remove_installation_medium="Please remove the installation medium, then press ENTER"
 
+# Rebooted into entering encryption passphrase
+text_encryption_prompt="Please unlock disk"
+
 # Post reboot
 
 text_not_listed="Not listed"
 text_literal_password="Password"
 
 # Logged in post-install
-text_desktop_first_run_one="Welcome to Ubuntu 24.10"
+text_desktop_first_run_one="Welcome to Ubuntu"
 
 # Ubuntu Pro dialog
 text_ubuntu_pro="Ubuntu Pro"

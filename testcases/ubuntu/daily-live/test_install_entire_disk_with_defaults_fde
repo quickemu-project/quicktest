@@ -1,0 +1,342 @@
+# Install Ubuntu daily live (oracular) using defaults and encryption
+########################################################################################
+#                                                                                      #
+#        Name: test_install_entire_disk_with_defaults                                  #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-13                                                              #
+#     Version: 1                                                                       #
+# Description: Do a clean install of Ubuntu 24.10 using all the defaults               #
+#              and encyption                                                           #
+########################################################################################
+
+function test_setup() {
+    # Set the test user and password for the installer
+    # Put these before sourcing the texts, as some of the texts
+    # may use these variables
+
+    test_user="Lola Chang"
+    test_password="Correct.horse_battery-stable"
+    
+    # Passphrase used by FDE
+    test_passphrase="Full-Disk_Encryption.Passphrase90210"
+}
+
+function test_post_boot_grub() {
+    # Wait a while for EUFI or BIOS to pass
+    # We could skip having this function, but it's nice to have
+    # So we have the opportunity to click that stupid dialog
+    qt_wait_for_seconds 10
+    # Wait for the grub menu
+    qt_wait_for_text "$FUNCNAME" "$text_console_gnu_grub" 10 5
+    qt_screenshot_ppm "$FUNCNAME"
+    # Press enter on the 'Try or install Ubuntu' GRUB option
+    qt_send_key "return"
+}
+
+function test_installer_initial_load() {
+    # Wait for the installer to load
+    # Takes a while initially to get started so we give it 10 loads of 30 seconds
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_title" 10 30
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_body" 10 3
+    case $QT_TEST_LANG in
+        "en_US")
+            qt_send_key "tab"
+            qt_send_key "return"
+            TESSERACT_LANG="eng"
+            ;;
+        "fr_FR")
+            qt_send_key "f"
+            qt_send_key "tab"
+            qt_send_key "return"
+            TESSERACT_LANG="fra"
+            ;;
+        *)
+            qt_send_key "tab"
+            qt_send_key "return"
+            ;;
+    esac
+}
+
+## This is temporary for debugging
+function test_open_terminal_capture_xrandr() {
+    # Open a terminal
+    qt_send_key_combo "ctrl-alt-t"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_wait_for_seconds 1
+    # Maximize the window
+    qt_send_key_combo "meta_l-up"
+    qt_wait_for_seconds 1
+    qt_send_string_return "sudo dmidecode"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key_combo "ctrl-l"
+    qt_send_string_return "xrandr"
+    qt_screenshot_ppm "$FUNCNAME"
+    # Get a pretty screenshot
+    qt_screenshot_ppm "$FUNCNAME"
+    # Close the terminal
+    qt_send_key_combo "ctrl-shift-q"
+}
+
+function test_installer_accessibility_screen() {
+    # We should be on the Accessibility screen
+    qt_wait_for_text "$FUNCNAME" "$text_installtion_accessibility_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installtion_accessibility_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_keyboard_screen() {
+    # We should be on the Keyboard screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_keyboard_layout_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_keyboard_layout_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"    
+}
+
+function test_installer_internet_connection_screen() {
+    # We should be on the Internet Connection screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_internet_connection_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_internet_connection_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_install_ubuntu_screen() {
+    # We should be on the Try or Install Ubuntu screen
+    # Is this skipped in non en_US?
+    if [ "$QT_TEST_LANG" != "en_US" ]; then
+        return
+    fi
+    qt_wait_for_text "$FUNCNAME" "$text_installation_try_or_install_ubuntu_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_try_or_install_ubuntu_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_type_of_install_screen() {
+    # We should be on the Type of Installation screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_type_of_installation_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_type_of_installation_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_applications_screen() {
+    # We should be at the Applications screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_applications_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_applications_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_optimize_your_computer_screen() {
+    # We should be at the Optimize your computer screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_optimize_your_computer_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_optimize_your_computer_body" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_default_disk_setup_screen() {
+    # We should be at the disk setup screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_default_disk_setup_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_default_disk_setup_body" 10 3
+
+    # Tab down to 'advanced' button
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key "return"
+}
+
+function test_installer_advanced_disk_setup_screen() {
+    qt_wait_for_text "$FUNCNAME" "$text_installation_advanced_disk_setup_title" 10 5
+
+    # Press radio button for encryption (tab, down, down, return)
+    qt_send_key_combo "tab"
+    qt_send_key_combo "down"
+    qt_send_key_combo "down"
+    qt_send_key "return"
+    # Tab down to exit dialog
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key "return"
+    # Move on to next screen
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_enter_passphrase() {
+    # We should be at the passphrase screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_enter_passphrase_title" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_enter_passphrase_body" 10 3
+
+    # Tab down to the field
+    qt_send_key_combo "tab"
+    qt_send_string_tab "$test_passphrase"
+    # Additional tab needed to get past the 'display passphrase' button
+    qt_send_key "tab"
+    # Enter a second time to confirm
+    qt_send_string_tab "$test_passphrase"
+
+    # Tab down to the 'Next' button
+    qt_send_key "tab"
+    qt_send_key "return"
+
+}
+
+function test_installer_create_your_account_screen() {
+    # We should be at the create your account screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_create_your_account_title" 10 5
+    qt_send_string_tab "$test_user"
+    qt_send_key "tab"
+    qt_send_key "tab"
+    qt_send_string_tab "$test_password"
+    # Jump over password visibility button
+    qt_send_key "tab"
+    qt_send_string_tab "$test_password"
+    # Jump to Active directory checkbox
+    # This dialog button is disabled when there is no network connection
+    # So we should skip this if we are not connected
+    if $QUICKEMU_NETWORK; then
+        qt_send_key "tab"
+    fi
+    # Jump to Back button
+    qt_send_key "tab"
+    # Jump to Next button
+    qt_send_key "tab"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "return"
+}
+
+function test_installer_select_your_timezone_screen() {
+    # We should be at the Select your timezone screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_select_your_timezone_title" 10 5
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_ready_to_install_screen() {
+    # We should be at the Ready to install screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_ready_to_install_title" 10 5
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key_combo "shift-tab"
+    # Punch the green install button and hope it works
+    qt_send_key "return"
+}
+
+function test_installer_installation_complete_screen() {
+    # Once the slide show is done, and so is the installation, we should get
+    # the installation complete screen
+    qt_wait_for_text "$FUNCNAME" "$text_installation_complete_title" 20 30
+    qt_wait_for_text "$FUNCNAME" "$text_installation_complete_body1" 10 3
+    qt_send_key_combo "shift-tab"
+    qt_send_key "return"
+}
+
+function test_installer_wait_for_installation_medium() {
+    # Wait for the installation medium to be removed
+    qt_wait_for_text "$FUNCNAME" "$text_remove_installation_medium" 10 5
+    qt_send_key "return"
+}
+
+function test_post_install_encryption_prompt() {
+    # Wait for the encryption prompt
+    qt_wait_for_text "$FUNCNAME" "$text_encryption_prompt" 10 10
+    qt_send_string_return "$test_passphrase"
+
+}
+
+function test_gdm3_wait_for_login() {
+    # Wait for the login screen
+    qt_wait_for_text "$FUNCNAME" "$text_not_listed" 10 10
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "return"
+    # We should now have the user selected, and the password field open
+    # Wait for username displayed above password prompt
+    qt_wait_for_text "$FUNCNAME" "$test_user" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_literal_password" 10 5
+    qt_send_string_return "$test_password"
+}
+
+function test_first_boot_desktop() {
+    # Wait for the desktop to load
+    # This is super painful as teseeact can barely find anything on this screen
+    # For now it spots the "Home" folder and that's it.
+    # Might need to change TESSEACT_OPTIONS to get this to work and set back to
+    # default after this test
+    # Let's see!
+    TESSERACT_OCR_OPTIONS="--psm 11"
+    qt_wait_for_text "$FUNCNAME" "$text_desktop_first_run_one" 10 10
+    qt_screenshot_ppm "$FUNCNAME"
+    TESSERACT_OCR_OPTIONS=""
+
+    # Close the window
+    qt_send_key_combo "alt-f4"
+    qt_wait_for_seconds 5
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Shutdown time
+    qt_send_key_combo "meta_l"
+    qt_screenshot_ppm "$FUNCNAME"
+
+    qt_wait_for_seconds 5
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_string_return "power off"
+
+    # Screenshot the power down dialog
+    qt_wait_for_seconds 1
+    qt_screenshot_ppm "$FUNCNAME"
+    
+    # Tab over to the 'Power off' button
+    qt_send_key "tab"
+    qt_send_key "return"
+
+    # Daisy... Daisy...
+    # See if we can get a screenshot as the system tears down
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Done
+}
+
+function test_install_entire_disk_with_defaults_fde() {
+    test_setup
+    test_post_boot_grub
+    test_installer_initial_load
+    #test_open_terminal_capture_xrandr
+    test_installer_accessibility_screen
+    test_installer_keyboard_screen
+    test_installer_internet_connection_screen
+    test_installer_install_ubuntu_screen
+    test_installer_type_of_install_screen
+    test_installer_applications_screen
+    test_installer_optimize_your_computer_screen
+    test_installer_default_disk_setup_screen
+    test_installer_advanced_disk_setup_screen
+    # Additional step to enter passphrase for FDE
+    test_installer_enter_passphrase
+
+    test_installer_create_your_account_screen
+    test_installer_select_your_timezone_screen
+    test_installer_ready_to_install_screen
+
+    # Insert slideshow tests here for each slide?
+
+    test_installer_installation_complete_screen
+    test_installer_wait_for_installation_medium
+
+    # Now the VM reboots, so we need to wait for the encryption prompt
+    test_post_install_encryption_prompt
+
+    # If we pass that, we should get to the login screen
+    test_gdm3_wait_for_login
+
+    # First boot desktop
+    test_first_boot_desktop
+
+    # Done
+}
