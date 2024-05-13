@@ -40,7 +40,7 @@ e.g. `sudo apt install tesseract-ocr`
 
 3. Clone this repo
 
-`git clone https://github.com/popey/quicktest`
+`git clone https://github.com/quickemu-project/quicktest`
 
 4. Run a test
 
