@@ -44,7 +44,7 @@ e.g. `sudo apt install tesseract-ocr`
 
 4. Run a test
 
-*This will download an ISO image for Alpine 3.11 using `quickget`, start a VM using `quickemu` then run automated tests.*
+*This will download an ISO image for Alpine Linux using `quickget`, start a VM using `quickemu` then run automated tests.*
 
 Do not interact with the Qemu window as it may invalidate the test results.
 
