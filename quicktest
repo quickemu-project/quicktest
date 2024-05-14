@@ -618,17 +618,18 @@ function qt_launch_quickemu() {
 # the command to do the injection
 # https://gist.github.com/mvidner/8939289
 function qt_get_qemu_socket() {
-    QEMU_SOCKET="${QUICKEMU_VM_DIR}/${OS}-${RELEASE}${EDITIONSUFFIX}"/"${OS}-${RELEASE}${EDITIONSUFFIX}"-monitor.socket
-    if [ ! -S "${QEMU_SOCKET}" ]; then
+    local qemu_socket="${QUICKEMU_VM_DIR}/${OS}-${RELEASE}${EDITIONSUFFIX}"/"${OS}-${RELEASE}${EDITIONSUFFIX}"-monitor.socket
+    local qemu_socket_rel=$(realpath -s --relative-to=$PWD $qemu_socket)
+    if [ ! -S "${qemu_socket_rel}" ]; then
         qt_echo "🚨 QEMU socket is not found."
         return 1
     else
-        qt_echo "ℹ️ QEMU socket is ${QEMU_SOCKET}"
+        qt_echo "ℹ️ QEMU socket is ${qemu_socket_rel}"
         #QEMU_SOCKET_COMMAND="nc -N -U $QEMU_SOCKET"
         # Now using socat, which seems decent, but it puts all kinds of 
         # garbage on the screen. We'll redirect it to /dev/null
         # It might be qemu, not socat, but whatever.
-        QEMU_SOCKET_COMMAND="$SOCAT - unix-connect:$QEMU_SOCKET" > /dev/null
+        QEMU_SOCKET_COMMAND="$SOCAT - unix-connect:$qemu_socket_rel" > /dev/null
         return 0
     fi
 }
