@@ -1,0 +1,30 @@
+Source: quicktest
+Section: utils
+Priority: optional
+Maintainer: Martin Wimpress <code@wimpress.io>
+Build-Depends:
+ debhelper-compat (= 12),
+Standards-Version: 4.5.1
+Homepage: https://github.com/quickemu-project/quicktest
+Vcs-Browser: https://github.com/quickemu-project/quicktest
+Vcs-Git: https://github.com/quickemu-project/quicktest.git
+Rules-Requires-Root: no
+
+Package: quicktest
+Architecture: all
+Depends:
+ coreutils,
+ ffmpeg,
+ grep,
+ imagemagick,
+ quickemu,
+ procps,
+ socat,
+ tesseract-ocr,
+ util-linux,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Quickly and automatically test systems inside Quickemu virtual machines
+ Quicktest runs test cases automatically in Qemu virtual machines using Quickemu
+ by injecting keypresses and reading the screen with Tesseract OCR.
+ .
