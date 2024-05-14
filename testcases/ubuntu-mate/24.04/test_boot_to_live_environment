@@ -1,0 +1,74 @@
+# Boot to live environment
+########################################################################################
+#                                                                                      #
+#        Name: test_boot_to_live_environment                                           #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-13                                                              #
+#     Version: 1                                                                       #
+# Description: Boot to the graphical desktop                                           #
+#                                                                                      #
+########################################################################################
+
+function test_setup() {
+    # No setup required
+    echo "No setup required"
+}
+
+function test_post_boot_grub() {
+    # Wait a while for EUFI or BIOS to pass
+    # We could skip having this function, but it's nice to have
+    # So we have the opportunity to click that stupid dialog
+    qt_wait_for_seconds 10
+    # Wait for the grub menu
+    qt_wait_for_text "$FUNCNAME" "$text_console_gnu_grub" 5 5
+    qt_screenshot_ppm "$FUNCNAME"
+    # Press enter on the 'Try or install Ubuntu' GRUB option
+    qt_send_key "return"
+}
+
+function test_installer_initial_load() {
+    # Wait for the installer to load
+    # Takes a while initially to get started so we give it 10 loads of 30 seconds
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_title" 10 30
+    qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_body" 10 3
+    qt_send_key_combo "alt-f4"
+    qt_wait_for_seconds 1
+}
+
+function test_open_terminal_capture_xrandr() {
+    # Open a terminal
+    qt_send_key_combo "ctrl-alt-t"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_wait_for_seconds 1
+    # Put something vaguely interesting useful in the terminal
+    qt_send_string_return "xrandr"
+    qt_send_string_return "lsb_release -a"
+    qt_send_string_return "uname -a"
+    qt_wait_for_seconds 1
+    # Get a pretty screenshot
+    qt_screenshot_ppm "$FUNCNAME"
+    # Close the terminal
+    qt_send_key_combo "ctrl-shift-q"
+}
+
+function test_launch_firefox {
+    # Launch Firefox
+    qt_send_key_combo "meta_l"
+    qt_send_string_return "firefox"
+    qt_wait_for_text "$FUNCNAME" "$text_firefox_welcome_to_firefox" 10 5
+    qt_send_key_combo "alt-f4"
+}
+
+function test_power_off_vm() {
+    # send power off
+    qt_poweroff_vm
+}
+
+function test_boot_to_live_environment() {
+    test_setup
+    test_post_boot_grub
+    test_installer_initial_load
+    test_open_terminal_capture_xrandr
+    test_launch_firefox
+    test_power_off_vm
+}
