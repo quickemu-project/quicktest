@@ -40,9 +40,6 @@ function test_open_terminal_capture_xrandr() {
     qt_send_key_combo "ctrl-alt-t"
     qt_screenshot_ppm "$FUNCNAME"
     qt_wait_for_seconds 1
-    # Maximize the window
-    qt_send_key_combo "meta_l-up"
-    qt_wait_for_seconds 1
     qt_send_string_return "xrandr"
     qt_screenshot_ppm "$FUNCNAME"
     # Get a pretty screenshot
