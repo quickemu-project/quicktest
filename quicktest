@@ -118,10 +118,10 @@ QEMU_INSERT_DELAY="${QEMU_INSERT_DELAY:-0.2}"
 # run out, or press ctrl-c to stop the script before it does something unexpected
 QT_VM_WARNING_TIMEOUT="${QT_VM_WARNING_TIMEOUT:-10}"
 
-# You can disable the warning about the VM already running if you want, which may
+# You can disable the error about the VM already running if you want, which may
 # be useful for follow-on tests which expect the VM to be running
 # Can be overridden in specific tests that need it
-QT_DISABLE_VM_WARNING="${QT_DISABLE_VM_WARNING:-false}"
+QT_DISABLE_VM_RUNNING_ERROR="${QT_DISABLE_VM_RUNNING_ERROR:-false}"
 
 # Similarly to the above, we have a timeout for when quicktest detects that the disk
 # has been modified. 
@@ -453,8 +453,7 @@ function qt_screenshot_ppm() {
     qt_send_command "screendump $ppmname"
     # Make sure ppm file actually exists after the above command
     if [ ! -f "$ppmname" ]; then
-        qt_echo "🚨 Screenshot failed"
-        exit 1
+        qt_test_fail "🚨 Screenshot failed"
     fi
 }
 
@@ -462,8 +461,7 @@ function qt_run_tesseract() {
     local ocrimage="$1"
     local ocrtext="$2"
     if ! $TESSERACT -l "$TESSERACT_LANG" "$ocrimage" "$ocrtext" $TESSERACT_OCR_OPTIONS ; then
-        qt_echo "🚨 OCR failed"
-        exit 1
+        qt_test_fail "🚨 OCR failed"
     fi
 }
 
@@ -570,13 +568,15 @@ function qt_launch_quickemu() {
     qt_echo "🚀 Launch quickemu ${OS}-${RELEASE}${EDITIONSUFFIX}.conf in ${QUICKEMU_VM_DIR}"
     pushd "${QUICKEMU_VM_DIR}" > /dev/null || return 1
     # Check to see if it's already running
-    if [ -f "${OS}-${RELEASE}${EDITIONSUFFIX}/${OS}-${RELEASE}${EDITIONSUFFIX}.pid" ]; then
+    if [ -e "${OS}-${RELEASE}${EDITIONSUFFIX}/${OS}-${RELEASE}${EDITIONSUFFIX}.pid" ]; then
         # Do we care though?
-        if $QT_DISABLE_VM_WARNING ; then
+        # If QT_DISABLE_VM_RUNNING_ERROR is true then we don't care, so issue a warning, wait and continue
+        if $QT_DISABLE_VM_RUNNING_ERROR ; then
             qt_echo "▶️ VM is already running as expected. Continuing."
-        else
-            qt_echo "⚠️ VM is already running. Continue only if it's in a known state."
             qt_wait_for_seconds "$QT_VM_WARNING_TIMEOUT"
+        else
+            qt_echo "⚠️ VM is already running. Stopping test case"
+            qt_test_fail "VM is already running"
         fi
     fi
     # Check if the disk image exists and already likely contains an OS
