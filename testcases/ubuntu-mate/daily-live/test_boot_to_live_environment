@@ -40,10 +40,6 @@ function test_open_terminal_capture_xrandr() {
     qt_send_key_combo "ctrl-alt-t"
     qt_screenshot_ppm "$FUNCNAME"
     qt_wait_for_seconds 1
-    # Maximize the window
-    qt_send_key_combo "alt-space"
-    qt_send_key "x"
-    qt_wait_for_seconds 1
     # Put something vaguely interesting useful in the terminal
     qt_send_string_return "xrandr"
     qt_send_string_return "lsb_release -a"
