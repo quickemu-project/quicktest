@@ -5,7 +5,7 @@ export LC_ALL=C
 # Copyright (C) 2024  Alan Pope
 # SPDX-License-Identifier: MIT
 
-readonly VERSION="0.1.0"
+readonly VERSION="0.2.0"
 
 # Whoami!?
 LAUNCHER=$(basename "${0}")
