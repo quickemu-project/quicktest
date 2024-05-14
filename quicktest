@@ -35,6 +35,10 @@ QT_TESTCASES_DIR="${QT_TESTCASES_DIR:-$QT_SCRIPT_DIR/testcases}"
 # Location of the keymaps for qemu
 QT_KEYMAPS_DIR="${QT_KEYMAPS_DIR:-$QT_TESTCASES_DIR/keymaps}"
 
+# Notify the user with a desktop notification when the test
+# is successful or fails
+QT_NOTIFY="${QT_NOTIFY:-true}"
+
 # The location where quickget and quickemu will run, and thus
 # store the downloaded ISO files and disk images
 QUICKEMU_VM_DIR="${QUICKEMU_VM_DIR:-$QT_SCRIPT_DIR/machines}"
@@ -671,7 +675,11 @@ function qt_write_summary_log() {
     if [ ! $QT_SUMMARY_LOG == "" ]; then
         local qt_end_time=$(date +%Y%m%d-%H%M%S)
         echo "$emoji ${QT_START_TIME} ${qt_end_time} ${OS} ${RELEASE} ${EDITIONPATH} ${TESTCASE}"  >> "$QT_SUMMARY_LOG"
+        if $QT_NOTIFY ; then
+            "$QT_NOTIFY_SEND" "quicktest" "${emoji} ${OS} ${RELEASE} ${EDITIONPATH} ${TESTCASE}"
+        fi        
     fi
+
 }
 
 # The standard place we end up when stuff fails. We then spit out the function name
@@ -684,7 +692,7 @@ function qt_test_fail() {
     if $QT_OPEN_RESULTS ; then
         open "$QT_RESULTS"
     fi
-    qt_write_summary_log "🚨"
+    qt_write_summary_log "🚨 FAIL "
     exit 99
 }
 
@@ -696,7 +704,7 @@ function qt_test_pass() {
     if $QT_OPEN_RESULTS ; then
         open "$QT_RESULTS"
     fi
-    qt_write_summary_log "🎉"
+    qt_write_summary_log "🎉 PASS "
 
 }
 
@@ -784,6 +792,11 @@ else
         exit 1
     else 
         QUICKEMU_VER_LONG=$($QUICKEMU --version)
+    fi
+fi
+if $QT_NOTIFY; then
+    if ! QT_NOTIFY_SEND=$(command -v notify-send); then
+        echo "🚨 notify-send is not found."
     fi
 fi
 if ! QUICKGET=$(command -v quickget); then
