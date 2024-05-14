@@ -51,6 +51,8 @@ text_installation_select_your_timezone_title="Select your timezone"
 
 text_installation_ready_to_install_title="Ready to install"
 
+text_firefox_welcome_to_firefox="Welcome to Firefox"
+
 # Installation finished screen
 
 text_installation_complete_title="Installation complete"

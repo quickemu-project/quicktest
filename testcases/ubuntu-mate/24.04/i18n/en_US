@@ -51,6 +51,7 @@ text_installation_select_your_timezone_title="Select your timezone"
 
 text_installation_ready_to_install_title="Ready to install"
 
+text_firefox_welcome_to_firefox="Welcome to Firefox"
 
 text_installation_complete_body1="Ubuntu-MATE 24.04 LTS is installed and ready to use"
 text_installation_complete_body2="Any changes you make will not be saved"
