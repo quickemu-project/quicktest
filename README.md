@@ -8,7 +8,7 @@ Quicktest runs test cases automatically in [Qemu](https://www.qemu.org/) virtual
 
 **Quicktest** is a companion for the excellent [Quickemu](https://github.com/quickemu-project/quickemu) that attempts to automate some testing usually performed by volunteers in their own time, before release.
 
-However, it could be expanded beyond that initial remit. 
+However, it could be expanded beyond that initial remit.
 
 ## Video Demo
 
@@ -24,7 +24,6 @@ This is the resulting video which is a timelapse of all the screenshots taken du
 
 [![quicktest demo result](https://img.youtube.com/vi/sDBB7G9ht5E/0.jpg)](https://www.youtube.com/watch?v=sDBB7G9ht5E)
 
-
 ## Goals
 
 At a high level, this is what Quicktest is all about:
@@ -35,33 +34,40 @@ At a high level, this is what Quicktest is all about:
 
 ## Quick Start
 
-**Quicktest** requires [quickemu](https://github.com/quickemu-project/quickemu) (and quickget), `qemu`, `ffmpeg`, `socat`, `convert` (from imagemagick) and `tesseract`
+**Quicktest** requires [quickemu](https://github.com/quickemu-project/quickemu) (and quickget), `qemu`, `ffmpeg`, `socat`, `convert` (from imagemagick) and `tesseract` : e.g.
 
-e.g. `sudo apt install socat ffmpeg imagemagick tesseract`
+``` shell
+sudo apt install socat ffmpeg imagemagick tesseract
+```
 
 1. Follow the installation instructions for [quickemu](https://github.com/quickemu-project/quickemu) 4.9.3 or newer
-2. Install [tesseract-ocr](https://github.com/tesseract-ocr/tesseract) along with appropriate language packages, e.g. `tesseract-ocr-fra` for French.
+1. Install [tesseract-ocr](https://github.com/tesseract-ocr/tesseract) along with appropriate language packages, e.g. `tesseract-ocr-fra` for French.
 
-e.g. `sudo apt install tesseract-ocr`
+    ``` shell
+    sudo apt install tesseract-ocr
+    ```
 
-3. Clone this repo
+1. Clone this repo
 
-`git clone https://github.com/quickemu-project/quicktest`
+    ``` shell
+    git clone https://github.com/quickemu-project/quicktest
+    ```
 
-4. Run a test
+1. Run a test
 
-*This will download an ISO image for Alpine Linux using `quickget`, start a VM using `quickemu` then run automated tests.*
+    *This will download an ISO image for Alpine Linux using `quickget`, start a VM using `quickemu` then run automated tests.*
 
-Do not interact with the Qemu window as it may invalidate the test results.
+>[!NOTE]
+>Do not interact with the Qemu window as it may invalidate the test results.
 
-```bash
+``` shell
 cd quicktest
 QUICKEMU_WIDTH=800 QUICKEMU_HEIGHT=600 ./quicktest test_boot_to_login alpine v3.19
 ```
 
 There are many options, which can be overridden at launch.
 
-```bash
+``` bash
 DEBUG=true \
 QT_KEEP_SCREENSHOTS=false \
 QT_KEEP_TESSERACT_TEXT=false \
@@ -73,7 +79,7 @@ QUICKEMU_HEIGHT=600 \
 
 Results will be found in `./results/`.
 
-```bash
+``` text
 tree results/
 results/
 └── alpine
@@ -101,22 +107,22 @@ For example, to do an install test of Ubuntu MATE 24.04:
 ## Philosophy
 
 **Quicktest** aims to treat the machine being tested as a user would. That is, it
-injects keypresses and mouse clicks as a human tester would, and inspects the screen 
+injects keypresses and mouse clicks as a human tester would, and inspects the screen
 as a human subject would.
 
 The aim is (where possible) to do everything necessary from 'outside' the virtual machine.
-That is, not to install software to operate the test machine inside the guest, but start 
+That is, not to install software to operate the test machine inside the guest, but start
 the machine and use the keyboard and mouse only.
 
 This is to ensure the guest OS is not tainted which could change the outcome of the test.
 
 Enthusiastic users should be able to both run and contribute to tests. New tests are welcome
-as pull requests. 
+as pull requests.
 
 ## Important Notes
 
 **Quicktest** main goal is to automate *some* of the testing required by Linux distro
-maintainers and release managers. It is not designed, nor should it be perceived to 
+maintainers and release managers. It is not designed, nor should it be perceived to
 replace human testing. This is a convenience script.
 
 **Quicktest** is very new and not widely tested yet. As such the features, names of
