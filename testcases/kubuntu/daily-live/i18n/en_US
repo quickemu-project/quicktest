@@ -1,0 +1,52 @@
+# Kubuntu Calamares install
+
+# Language
+TESSERACT_LANG="eng"
+
+# GRUB
+text_console_gnu_grub="GNU GRUB"
+
+# Initial splash
+text_installation_try_kubuntu="Try Kubuntu"
+text_installation_install_kubuntu="Install Kubuntu"
+
+# Calamares Welcome
+
+text_calamares_welcome_1="Welcome to the Kubuntu installer"
+text_calamares_welcome_2="This program will ask you some questions"
+
+# Calamares Language
+
+text_calamares_language="The system language will be set to"
+
+# Calamares Keyboard
+
+text_calamares_keyboard="Keyboard model"
+
+# Calamares Customize
+
+text_calamares_customize="Installation Mode"
+
+# Calamares Partitions
+
+text_calamares_partitions="Select storage device"
+
+# Calamares Users
+
+text_calamares_users="Your Full Name"
+
+# Calamares Summary
+
+text_calamares_summary="This is an overview"
+
+# Calamares Install
+
+text_calamares_install="Continue with Installation"
+
+# Calamares Finished
+
+text_calamares_finished="All done"
+
+# Installation finished, reboot dialog
+
+text_remove_installation_medium="Please remove the installation medium, then press ENTER"
