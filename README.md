@@ -8,9 +8,13 @@ Quicktest runs test cases automatically in [Qemu](https://www.qemu.org/) virtual
 
 **Quicktest** is a companion for the excellent [Quickemu](https://github.com/quickemu-project/quickemu) that attempts to automate some testing usually performed by volunteers in their own time, before release.
 
-However, it could be expanded beyond that initial remit.
+However, it could be expanded beyond that initial remit. 
 
-## Recorded demo
+## Video Demo
+
+Here's a ~6 minute video explaining Quicktest, with a (speeded up) demo.
+
+[![Introduction to Quicktest video](https://img.youtube.com/vi/jAvEgBWedOM/0.jpg)](https://www.youtube.com/watch?v=jAvEgBWedOM)
 
 Here's an asciinema of running a test case in quicktest.
 
