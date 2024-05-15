@@ -1,0 +1,130 @@
+# Install Kubuntu daily live (oracular) using defaults
+########################################################################################
+#                                                                                      #
+#        Name: test_install_calamares_defaults                                         #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-10                                                              #
+#     Version: 1                                                                       #
+# Description: Do a clean install of Kubuntu 24.10 using all the defaults              #
+#                                                                                      #
+########################################################################################
+
+function test_setup() {
+    test_user="Lola Chang"
+    test_password="Correct.horse_battery-stable"
+}
+
+function test_post_boot_grub() {
+    qt_wait_for_seconds 10
+    qt_wait_for_text "$FUNCNAME" "$text_console_gnu_grub" 10 5
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "return"
+}
+
+function test_installer_initial_load() {
+    qt_wait_for_text "$FUNCNAME" "$text_installation_try_kubuntu" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_installation_install_kubuntu" 10 5
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "spc"    
+}
+
+function test_calamares_welcome() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_welcome_1" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_welcome_1" 10 5
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_language() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_language" 10 5
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_keyboard() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_keyboard" 10 5
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_customize() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_customize" 10 5
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_partitions() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_partitions" 10 5
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "spc"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "shift-tab"
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_users() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_users" 10 5
+    qt_send_string_tab "$test_user"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"    
+    qt_send_string_tab "$test_password"
+    qt_send_string_tab "$test_password"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "tab"
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_summary() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_summary" 10 5
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_install() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_install" 10 30
+    qt_send_key_combo "spc"
+}
+
+function test_calamares_finished() {
+    qt_wait_for_text "$FUNCNAME" "$text_calamares_finished" 10 30
+    qt_send_key_combo "spc"
+}
+
+function test_installer_wait_for_installation_medium() {
+    qt_wait_for_text "$FUNCNAME" "$text_remove_installation_medium" 10 5
+    qt_send_key "return"
+}
+
+function test_power_off_vm() {
+    qt_poweroff_vm
+}
+
+function test_install_calamares_defaults() {
+    test_setup
+    test_post_boot_grub
+    test_installer_initial_load
+    test_calamares_welcome
+    test_calamares_language
+    test_calamares_keyboard
+    test_calamares_customize
+    test_calamares_partitions
+    test_calamares_users
+    test_calamares_summary
+    test_calamares_install
+    test_calamares_finished
+    test_installer_wait_for_installation_medium
+    test_power_off_vm
+}
