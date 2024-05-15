@@ -161,7 +161,8 @@ is welcome. but please be kind.
 - [X] Work out why the i18n file won't load
 - [X] Add a very small distro as a ci test (alpine, test boot to grub only and power off)
 - [X] Figure out how to deal with tests written in other languages than en_GB
-- [X] Get QT_SCALE_IMAGE working- [ ] If using spice display, have an option to poke the annoying spice dialog, off by default
+- [X] Get QT_SCALE_IMAGE working
+- - [ ] If using spice display, have an option to poke the annoying spice dialog, off by default
 - [X] Write a test for Ubuntu daily live
 - [X] Stitch together the screenshot_*.ppm files with 5 seconds wait on each frame as a video
 - [X] Maybe move VMs and ISOs elsewhere in a subdirectory like vm/
@@ -218,7 +219,7 @@ is welcome. but please be kind.
 - Do we dynamically adjust delay timings based on detected disk/cpu speed of machine?
 - Should we snapshot of the installation prior to starting at end?
 - Should we allow skipping tests with a --start-on to make it skip tests you already did?
-- Should we train Ttesseract on the Ubuntu font? 
+- Should we train Tesseract on the Ubuntu font?
 
 ## Other uses of quicktest
 
