@@ -37,7 +37,7 @@ At a high level, this is what Quicktest is all about:
 **Quicktest** requires [quickemu](https://github.com/quickemu-project/quickemu) (and quickget), `qemu`, `ffmpeg`, `socat`, `convert` (from imagemagick) and `tesseract` : e.g.
 
 ``` shell
-sudo apt install socat ffmpeg imagemagick tesseract
+sudo apt install socat ffmpeg imagemagick tesseract-ocr
 ```
 
 1. Follow the installation instructions for [quickemu](https://github.com/quickemu-project/quickemu) 4.9.3 or newer
