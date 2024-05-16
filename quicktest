@@ -746,7 +746,7 @@ else    case "${1}" in
         qt_list_tests
         exit;;
     -version|--version|-v)
-        echo "quickemu ${VERSION}"
+        echo "quicktest ${VERSION}"
         exit;;
     -h|--h|-help|--help)
         qt_usage
