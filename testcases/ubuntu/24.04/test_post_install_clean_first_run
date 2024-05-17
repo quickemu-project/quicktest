@@ -1,0 +1,132 @@
+# Post install first-run test
+########################################################################################
+#                                                                                      #
+#        Name: test_post_install_clean_first_run                                       #
+#      Author: Alan Pope                                                               #
+#        Date: 2024-05-16                                                              #
+#     Version: 1                                                                       #
+# Description: Test the first-run experience after an installation has been done       #
+#                                                                                      #
+########################################################################################
+
+
+function test_setup() {
+    # Settings we choose to override here
+    KEEP_SCREENSHOTS=true
+    # Don't warn us that the disk isn't clean. We expect that in
+    # this test
+    DISABLE_DISK_WARNING=true
+
+    # Don't warn us that we're running the VM already. We expect 
+    # that may be the case in this test
+    DISABLE_VM_WARNING=true
+
+    # This should match the user/pass used when the vm was created
+    test_user="Lola Chang"
+    test_password="Correct.horse_battery-stable"
+}
+
+function test_gdm3_wait_for_login() {
+    # Wait for the login screen
+    qt_wait_for_text "$FUNCNAME" "$text_not_listed" 10 10
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "return"
+    # We should now have the user selected, and the password field open
+    # Wait for username displayed above password prompt
+    qt_wait_for_text "$FUNCNAME" "$test_user" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_literal_password" 10 5
+    qt_send_string_return "$test_password"
+}
+
+function test_desktop_post_install_first_run() {
+    # Wait for the desktop to load
+    # This is super painful as teseeact can barely find anything on this screen
+    # For now it spots the "Home" folder and that's it.
+    # Let's temporarily change TESSERACT_OCR_OPTIONS to get this to work and set back to
+    # default after this test
+    # Let's see!
+    backup_TESSERACT_OCR_OPTIONS=$TESSERACT_OCR_OPTIONS
+    TESSERACT_OCR_OPTIONS="--psm 11"
+    qt_wait_for_text "$FUNCNAME" "$text_desktop_first_run_one" 10 10
+    qt_screenshot_ppm "$FUNCNAME"
+    TESSERACT_OCR_OPTIONS=$backup_TESSERACT_OCR_OPTIONS
+    # Find the Next button and hit it
+    qt_send_key "tab"
+    qt_send_key "tab"
+    qt_send_key "return"
+    qt_wait_for_seconds 1
+
+    # Look for the Ubuntu Pro promotional gala
+    qt_wait_for_text "$FUNCNAME" "$text_ubuntu_pro" 10 5
+    # Look for the Ubuntu Pro promotional gala
+    qt_wait_for_text "$FUNCNAME" "$text_enable_ubuntu_pro" 10 5
+    # Find the Next button and hit it (should already be highlighted)
+    qt_send_key "return"
+    qt_wait_for_seconds 1
+
+    # Look for the Help Improve Ubuntu screen
+    qt_wait_for_text "$FUNCNAME" "$text_help_improve_ubuntu" 10 5
+    qt_wait_for_text "$FUNCNAME" "$text_share_system_data" 10 5
+    qt_send_key "return"
+    qt_wait_for_seconds 1
+
+    # Applications screen
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_key "tab"
+    qt_send_key "tab"
+    qt_send_key "return"
+}
+
+function test_desktop_post_install_settings_about() {
+
+    # Empty desktop in theory
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Let's get the settings panel up
+    # First lets get the activities overview up
+    qt_send_key_combo "meta_l"
+    qt_wait_for_seconds 1
+    qt_screenshot_ppm "$FUNCNAME"
+
+    qt_send_string_return "about"
+    qt_wait_for_seconds 3
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Maximize the settings window
+    qt_send_key_combo "meta_l-up"
+    qt_wait_for_seconds 1
+    # Get a pretty screenshot
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Close the settings window
+    qt_send_key_combo "alt-f4"
+    qt_wait_for_seconds 1
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Shutdown the machine gracefully
+    qt_send_key_combo "meta_l"
+    qt_wait_for_seconds 1
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_send_string_return "power off"
+    
+    # Tab over to the power off button then press it
+    qt_wait_for_seconds 1
+    qt_send_key "tab"
+    qt_send_key "return"
+    qt_screenshot_ppm "$FUNCNAME"
+    qt_wait_for_seconds 1
+
+    # Get one last screenshot as it powers down
+    # [HAL9000] "Daisy... Daisy..."
+    qt_screenshot_ppm "$FUNCNAME"
+
+    # Done
+}
+
+# Note that this function mateches the name of the test file
+# It's the entry point for the test.
+function test_post_install_clean_first_run() {
+    test_gdm3_wait_for_login
+    test_desktop_post_install_first_run
+    test_desktop_post_install_settings_about
+}
