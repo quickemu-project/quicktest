@@ -1,18 +1,17 @@
-# Post install first-run test
-########################################################################################
-#                                                                                      #
-#        Name: test_post_install_clean_first_run                                       #
-#      Author: Alan Pope                                                               #
-#        Date: 2024-05-16                                                              #
-#     Version: 1                                                                       #
-# Description: Test the first-run experience after an installation has been done       #
-#                                                                                      #
-########################################################################################
+# Test the first-run experience after an installation can be completed 
 
+function test_description() {
+    cat << EOF
+Test the first-run experience after an installation can be completed
+- Wait for the GDM3 login screen
+- Log in using the account previously created
+- Wait for the desktop to load
+- Click through the first-run experience
+- Power off the VM at the end
+EOF
+}
 
 function test_setup() {
-    # Settings we choose to override here
-    KEEP_SCREENSHOTS=true
     # Don't warn us that the disk isn't clean. We expect that in
     # this test
     DISABLE_DISK_WARNING=true
@@ -130,3 +129,5 @@ function test_post_install_clean_first_run() {
     test_desktop_post_install_first_run
     test_desktop_post_install_settings_about
 }
+
+test_description
