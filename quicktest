@@ -697,6 +697,7 @@ function qt_test_fail() {
     if $QT_OPEN_RESULTS ; then
         open "$QT_RESULTS"
     fi
+    qt_poweroff_vm
     qt_write_summary_log "🚨 FAIL "
     exit 99
 }
@@ -710,7 +711,6 @@ function qt_test_pass() {
         open "$QT_RESULTS"
     fi
     qt_write_summary_log "🎉 PASS "
-
 }
 
 # This is where we clean up after ourselves. We optionally make a timelapse video from the screenshots
