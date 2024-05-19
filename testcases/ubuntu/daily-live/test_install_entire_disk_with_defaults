@@ -1,13 +1,14 @@
-# Install Ubuntu daily live (oracular) using defaults
-########################################################################################
-#                                                                                      #
-#        Name: test_install_entire_disk_with_defaults                                  #
-#      Author: Alan Pope                                                               #
-#        Date: 2024-05-10                                                              #
-#     Version: 1                                                                       #
-# Description: Do a clean install of Ubuntu 24.10 using all the defaults               #
-#                                                                                      #
-########################################################################################
+# Do a clean install of Ubuntu 24.10 (oracular) using all the defaults
+
+function test_description() {
+    cat << EOF
+Do a clean install of Ubuntu 24.10 (oracular) using all the defaults
+- Wait for GNU GRUB
+- Wait for the Ubuntu installer to load
+- Go through the installer using all the defaults
+- Power off the VM at the end
+EOF
+}
 
 function test_setup() {
     # Set the test user and password for the installer
@@ -230,3 +231,5 @@ function test_install_entire_disk_with_defaults() {
 
     test_power_off_vm
 }
+
+test_description

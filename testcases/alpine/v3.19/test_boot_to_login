@@ -1,13 +1,16 @@
 # Test we can boot to the login screen and login and out then shutdown
-########################################################################################
-#                                                                                      #
-#        Name: test_boot_to_login                                                      #
-#      Author: Alan Pope                                                               #
-#        Date: 2024-05-10                                                              #
-#     Version: 1                                                                       #
-# Description: A very simple test using a small distro to prove everything works       #
-#                                                                                      #
-########################################################################################
+
+function test_description() {
+    cat << EOF
+A very simple test using a small distro to prove everything works
+- Wait for GNU GRUB
+- Wait for the console login screen
+- Login as root
+- Clear the screen
+- Type all the keys
+- Power off the VM at the end
+EOF
+}
 
 function test_setup() {
     test_alpine_username="root"
@@ -68,3 +71,5 @@ function test_boot_to_login() {
     test_console_logout_user
     test_power_off_vm
 }
+
+test_description

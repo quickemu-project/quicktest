@@ -1,13 +1,14 @@
-# Install Ubuntu 24.04 using defaults
-########################################################################################
-#                                                                                      #
-#        Name: test_install_entire_disk_with_defaults                                  #
-#      Author: Alan Pope                                                               #
-#        Date: 2024-05-10                                                              #
-#     Version: 1                                                                       #
-# Description: Do a clean install of Ubuntu 24.04 using all the default                #
-#                                                                                      #
-########################################################################################
+# Do a clean install of Ubuntu 24.04 using all the defaults
+
+function test_description() {
+    cat << EOF
+Do a clean install of Ubuntu 24.04 using all the defaults
+- Wait for GNU GRUB
+- Wait for the Ubuntu installer to load
+- Go through the installer using all the defaults
+- Power off the VM at the end
+EOF
+}
 
 function test_setup() {
     # Set the test user and password for the installer
@@ -52,26 +53,6 @@ function test_installer_initial_load() {
             qt_send_key "return"
             ;;
     esac
-}
-
-## This is temporary for debugging
-function test_open_terminal_capture_xrandr() {
-    # Open a terminal
-    qt_send_key_combo "ctrl-alt-t"
-    qt_screenshot_ppm "$FUNCNAME"
-    qt_wait_for_seconds 1
-    # Maximize the window
-    qt_send_key_combo "meta_l-up"
-    qt_wait_for_seconds 1
-    qt_send_string_return "sudo dmidecode"
-    qt_screenshot_ppm "$FUNCNAME"
-    qt_send_key_combo "ctrl-l"
-    qt_send_string_return "xrandr"
-    qt_screenshot_ppm "$FUNCNAME"
-    # Get a pretty screenshot
-    qt_screenshot_ppm "$FUNCNAME"
-    # Close the terminal
-    qt_send_key_combo "ctrl-shift-q"
 }
 
 function test_installer_accessibility_screen() {
@@ -229,3 +210,5 @@ function test_install_entire_disk_with_defaults() {
 
     test_power_off_vm
 }
+
+test_description

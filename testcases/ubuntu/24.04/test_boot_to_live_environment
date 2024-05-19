@@ -1,13 +1,15 @@
-# Boot to welcome screen
-########################################################################################
-#                                                                                      #
-#        Name: test_boot_to_live_environment                                             #
-#      Author: Alan Pope                                                               #
-#        Date: 2024-05-19                                                              #
-#     Version: 2                                                                       #
-# Description: Boot to the graphical desktop                                        #
-#                                                                                      #
-########################################################################################
+# Boot to the desktop, run a few things and shutdown
+
+function test_description() {
+    cat << EOF
+Boot to the desktop, run a few things and shutdown
+- Wait for GNU GRUB
+- Wait for the Ubuntu installer, then close it
+- Open a terminal and run xrandr
+- Launch Firefox
+- Power off the VM at the end
+EOF
+}
 
 function test_setup() {
     # No setup required
@@ -72,3 +74,5 @@ function test_boot_to_live_environment() {
     test_launch_firefox    
     test_power_off_vm
 }
+
+test_description

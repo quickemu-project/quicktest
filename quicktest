@@ -670,8 +670,6 @@ function qt_load_keys() {
 # Here we actually launch the test case. 
 function qt_launch_testcase() {
     qt_echo "🚀 Launch test case ${OS}/${RELEASE}${EDITIONPATH}/${TESTCASE}"
-    # Display the first ten lines if they start with a comment
-    head -n 10 "${QT_TESTCASES_DIR}"/"${OS}"/"${RELEASE}${EDITIONPATH}"/"${TESTCASE}" | grep "^#"
     "$TESTCASE"
 }
 
