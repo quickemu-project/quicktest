@@ -29,11 +29,11 @@ text_calamares_customize="Installation Mode"
 
 # Calamares Partitions
 
-text_calamares_partitions="Select storage device"
+text_calamares_partitions="Erase disk"
 
 # Calamares Users
 
-text_calamares_users="Your Full Name"
+text_calamares_users="Computer Name"
 
 # Calamares Summary
 
