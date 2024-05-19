@@ -1,11 +1,11 @@
-# Boot to live environment
+# Boot to welcome screen
 ########################################################################################
 #                                                                                      #
-#        Name: test_boot_to_live_environment                                           #
+#        Name: test_boot_to_live_environment                                             #
 #      Author: Alan Pope                                                               #
-#        Date: 2024-05-13                                                              #
-#     Version: 1                                                                       #
-# Description: Boot to the graphical desktop                                           #
+#        Date: 2024-05-19                                                              #
+#     Version: 2                                                                       #
+# Description: Boot to the graphical desktop                                        #
 #                                                                                      #
 ########################################################################################
 
@@ -32,9 +32,9 @@ function test_installer_initial_load() {
     qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_title" 10 30
     qt_wait_for_text "$FUNCNAME" "$text_installation_welcome_to_ubuntu_body" 10 3
     qt_send_key_combo "alt-f4"
+    qt_wait_for_seconds 1
 }
 
-## This is temporary for debugging
 function test_open_terminal_capture_xrandr() {
     # Open a terminal
     qt_send_key_combo "ctrl-alt-t"
@@ -51,9 +51,12 @@ function test_open_terminal_capture_xrandr() {
 function test_launch_firefox {
     # Launch Firefox
     qt_send_key_combo "meta_l"
+    qt_wait_for_seconds 1
     qt_send_string_return "firefox"
     qt_wait_for_text "$FUNCNAME" "$text_firefox_welcome_to_firefox" 10 5
+    qt_wait_for_seconds 1
     qt_send_key_combo "alt-f4"
+    qt_wait_for_seconds 1
 }
 
 function test_power_off_vm() {
