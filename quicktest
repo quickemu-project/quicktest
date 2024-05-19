@@ -39,6 +39,11 @@ QT_KEYMAPS_DIR="${QT_KEYMAPS_DIR:-$QT_TESTCASES_DIR/keymaps}"
 # is successful or fails
 QT_NOTIFY="${QT_NOTIFY:-true}"
 
+# If the user has already downloaded the ISO and doesn't feel
+# it's necessary to SHA256SUM check it, they can skip that step
+# by setting this to true.
+QT_QUICKGET_SKIP="${QT_QUICKGET_SKIP:-false}"
+
 # The location where quickget and quickemu will run, and thus
 # store the downloaded ISO files and disk images
 QUICKEMU_VM_DIR="${QUICKEMU_VM_DIR:-$QT_SCRIPT_DIR/machines}"
@@ -863,9 +868,13 @@ if ! test_setup; then
 fi
 
 # Run quickget to get (or check) the install image
-if ! qt_launch_quickget; then
-    echo "🚨 quickget failed."
-    exit 1
+if ! $QT_QUICKGET_SKIP; then 
+    if ! qt_launch_quickget; then
+        echo "🚨 quickget failed."
+        exit 1
+    fi
+else
+    echo "ℹ️ Skipping quickget"
 fi
 
 # Launch the VM
