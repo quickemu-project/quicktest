@@ -1,2 +1,9 @@
-results/
-quicktest.log
+/machines/*.conf
+/machines/*/
+/results/
+/quicktest.log
+
+# IDE files
+
+*.swp
+/.idea/
