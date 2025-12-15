@@ -30,7 +30,7 @@ jobs:
           ./quicktest --list-tests | tee results/testcases.txt
           echo -e "\nResults:"
           echo "- All test cases: $(wc -l results/testcases.txt | tail -n +2)"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: supported
           path: results/testcases.txt
