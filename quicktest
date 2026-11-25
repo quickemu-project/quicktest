@@ -488,6 +488,12 @@ function qt_grep_screenshot_text() {
     fi
 }
 
+function qt_parse_scale_command() {
+    local -n out_cmd="$1"
+    out_cmd=()
+    IFS=$' \t\n' read -r -d '' -a out_cmd < <(printf '%s\0' "$QT_SCALE_COMMAND") || true
+}
+
 function qt_search_screenshot() {
     local test_name="$1"
     local searchterm="$2"
@@ -501,7 +507,7 @@ function qt_search_screenshot() {
     local invertedimage="$QT_RESULTS/ocr_inverted_${screenshot_count}_${test_name}"
     local invertedtext="$QT_RESULTS/ocr_inverted_${screenshot_count}_${test_name}"
     local -a scale_cmd=()
-    read -r -a scale_cmd <<< "$QT_SCALE_COMMAND"
+    qt_parse_scale_command scale_cmd
 
     # If we need to scale the image (to make it easier for tesseract to find things)
     # then we do that here. We scale by 300% by default, but this can be overridden.
@@ -552,8 +558,10 @@ function qt_ocr_only() {
     local ppmname="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name".ppm
     local ppmx3name="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name"_x3.ppm
     local txtname="$QT_RESULTS"/screenshot_"$screenshot_count"_"$test_name"
+    local -a scale_cmd=()
+    qt_parse_scale_command scale_cmd
 
-    if ! $QT_SCALE_COMMAND "$ppmname" -scale 300% "$ppmx3name"; then
+    if ! "${scale_cmd[@]}" "$ppmname" -scale 300% "$ppmx3name"; then
         qt_echo "🚨 Image scaling failed"
         exit 1
     fi
@@ -811,9 +819,10 @@ if ! TESSERACT=$(command -v tesseract); then
     echo "🚨 tesseract is not found."
     exit 1
 fi
-read -r -a qt_scale_cmd <<< "$QT_SCALE_COMMAND"
+qt_scale_cmd=()
+qt_parse_scale_command qt_scale_cmd
 if [ "${#qt_scale_cmd[@]}" -eq 0 ] || ! command -v "${qt_scale_cmd[0]}" >/dev/null; then
-    echo "🚨 convert is not found."
+    echo "🚨 ${qt_scale_cmd[0]:-QT_SCALE_COMMAND} is not found."
     exit 1
 fi
 if ! QUICKEMU=$(command -v quickemu); then
