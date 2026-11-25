@@ -500,11 +500,13 @@ function qt_search_screenshot() {
     local scaledimage="$QT_RESULTS/ocr_scaled_${screenshot_count}_${test_name}"
     local invertedimage="$QT_RESULTS/ocr_inverted_${screenshot_count}_${test_name}"
     local invertedtext="$QT_RESULTS/ocr_inverted_${screenshot_count}_${test_name}"
+    local -a scale_cmd=()
+    read -r -a scale_cmd <<< "$QT_SCALE_COMMAND"
 
     # If we need to scale the image (to make it easier for tesseract to find things)
     # then we do that here. We scale by 300% by default, but this can be overridden.
     if [ -n "$QT_SCALE_IMAGE" ] && [ "$QT_SCALE_IMAGE" != "0" ] && [ "$QT_SCALE_IMAGE" != "0%" ]; then
-        if ! "$QT_SCALE_COMMAND" "${dumpedimage}.ppm" -scale "$QT_SCALE_IMAGE" "${scaledimage}.ppm"; then
+        if ! "${scale_cmd[@]}" "${dumpedimage}.ppm" -scale "$QT_SCALE_IMAGE" "${scaledimage}.ppm"; then
             rm -f "${scaledimage}.ppm"
             qt_echo "🚨 Image scaling failed"
             qt_test_fail "Image scaling failed"
@@ -528,7 +530,7 @@ function qt_search_screenshot() {
         if [ -n "$QT_SCALE_IMAGE" ] && [ "$QT_SCALE_IMAGE" != "0" ] && [ "$QT_SCALE_IMAGE" != "0%" ]; then
             invert_args+=(-scale "$QT_SCALE_IMAGE")
         fi
-        if ! "$QT_SCALE_COMMAND" "${dumpedimage}.ppm" "${invert_args[@]}" "${invertedimage}.ppm"; then
+        if ! "${scale_cmd[@]}" "${dumpedimage}.ppm" "${invert_args[@]}" "${invertedimage}.ppm"; then
             rm -f "${invertedimage}.ppm"
             qt_echo "Image inversion failed"
             qt_test_fail "Image inversion failed"
@@ -809,7 +811,8 @@ if ! TESSERACT=$(command -v tesseract); then
     echo "🚨 tesseract is not found."
     exit 1
 fi
-if ! QT_SCALE_COMMAND=$(command -v "$QT_SCALE_COMMAND"); then
+read -r -a qt_scale_cmd <<< "$QT_SCALE_COMMAND"
+if [ "${#qt_scale_cmd[@]}" -eq 0 ] || ! command -v "${qt_scale_cmd[0]}" >/dev/null; then
     echo "🚨 convert is not found."
     exit 1
 fi
