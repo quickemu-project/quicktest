@@ -606,11 +606,27 @@ function qt_launch_quickemu() {
         qt_echo "✅ Disk image does not yet exist."
     fi
     # By default we have network connection, but we may disable that for some tests
+    local -a extra_opts=()
     if ! $QUICKEMU_NETWORK; then
         qt_echo "🚨 Network is disabled"
-        QUICKEMU_OPTS="${QUICKEMU_OPTS} --offline"
+        extra_opts+=("--offline")
     fi
-    if ! $QUICKEMU $QUICKEMU_OPTS --display "$QUICKEMU_DISPLAY" --width "$QUICKEMU_WIDTH" --height "$QUICKEMU_HEIGHT" --vm "${OS}-${RELEASE}${EDITIONSUFFIX}".conf; then
+    if [ "$QUICKEMU_DISPLAY" = "none" ]; then
+        local has_viewer=false
+        local opt
+        for opt in $QUICKEMU_OPTS; do
+            case "$opt" in
+                -viewer|--viewer|-viewer=*|--viewer=*)
+                    has_viewer=true
+                    break
+                    ;;
+            esac
+        done
+        if ! $has_viewer; then
+            extra_opts+=("--viewer" "none")
+        fi
+    fi
+    if ! $QUICKEMU $QUICKEMU_OPTS "${extra_opts[@]}" --display "$QUICKEMU_DISPLAY" --width "$QUICKEMU_WIDTH" --height "$QUICKEMU_HEIGHT" --vm "${OS}-${RELEASE}${EDITIONSUFFIX}".conf; then
         # this is due to https://github.com/quickemu-project/quickemu/issues/1170
         # fixed in later releases
         # Once quickemu is updated we remove popd and change to return 1
