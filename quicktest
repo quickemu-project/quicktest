@@ -78,7 +78,7 @@ QUICKEMU_OPTS="${QUICKEMU_OPTS:-}"
 # seeing what tesseract sees.
 # Note --psm and -l must come before the others, if specified
 #TESSERACT_OCR_OPTIONS="--loglevel ALL -c tessedit_write_images=true"
-TESSERACT_OCR_OPTIONS="${TESSERACT_OCR_OPTIONS:---loglevel OFF quiet}"
+# Default is set by qt_set_default_tesseract_options after detecting tesseract version.
 
 # We scale up images by 3x which might not be necessary in some cases.
 # Set this to zero to disable scaling. Otherwise it's a percentage
@@ -466,6 +466,19 @@ function qt_screenshot_ppm() {
     fi
 }
 
+function qt_set_default_tesseract_options() {
+    if [ -n "${TESSERACT_OCR_OPTIONS+x}" ]; then
+        return 0
+    fi
+    local tesseract_ver_line
+    tesseract_ver_line="$("$TESSERACT" --version 2>&1 | head -n 1)"
+    if [[ "${tesseract_ver_line}" =~ ([0-9]+)\.[0-9]+ ]] && [ "${BASH_REMATCH[1]}" -ge 5 ]; then
+        TESSERACT_OCR_OPTIONS="--loglevel OFF quiet"
+    else
+        TESSERACT_OCR_OPTIONS="quiet"
+    fi
+}
+
 function qt_run_tesseract() {
     local ocrimage="$1"
     local ocrtext="$2"
@@ -841,6 +854,7 @@ if ! TESSERACT=$(command -v tesseract); then
     echo "🚨 tesseract is not found."
     exit 1
 fi
+qt_set_default_tesseract_options
 qt_parse_scale_command
 if [ "${#QT_SCALE_CMD[@]}" -eq 0 ] || ! command -v "${QT_SCALE_CMD[0]}" >/dev/null; then
     echo "🚨 ${QT_SCALE_CMD[0]:-QT_SCALE_COMMAND} is not found."
